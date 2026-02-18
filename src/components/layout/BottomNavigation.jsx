@@ -41,8 +41,8 @@ export const BottomNavigation = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f2f4f6] z-50">
-      <div className="flex items-start justify-around px-5 pt-2 pb-2">
+    <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#f2f4f6] z-50 lg:hidden">
+      <div className="flex items-start justify-around px-5 pt-2 pb-2 max-w-[480px] mx-auto">
         {NAV_ITEMS.map((item) => {
           const isActive = pathname === item.path;
 

@@ -60,7 +60,9 @@ const TripCard = ({ trip, onClick, isLast }) => {
           </div>
         </div>
       </div>
-      {!isLast && <div className="h-[1px] mx-5 bg-[rgba(229,235,241,0.7)]" />}
+      {!isLast && (
+        <div className="h-[1px] mx-5 bg-[rgba(229,235,241,0.7)] md:hidden" />
+      )}
     </>
   );
 };
@@ -94,9 +96,9 @@ export default function TripsListPage() {
   const displayTrips = activeTab === "itinerary" ? itineraryTrips : recordTrips;
 
   return (
-    <MobileContainer>
+    <MobileContainer className="lg:max-w-[1280px] mx-auto" showNav={true}>
       <div className="h-full bg-white text-[#111] flex flex-col">
-        <header className="flex items-center justify-between px-5 py-3.5 bg-white sticky top-0 z-10">
+        <header className="flex items-center justify-between px-5 py-3.5 bg-white sticky top-0 z-10 max-w-[1280px] w-full mx-auto">
           <h1 className="text-[20px] font-semibold text-[#111] tracking-[-0.5px]">
             여행 일정
           </h1>
@@ -108,7 +110,7 @@ export default function TripsListPage() {
           </button>
         </header>
 
-        <div className="flex border-b border-[#f2f4f6] bg-white sticky top-[56px] z-[9] px-5">
+        <div className="flex border-b border-[#f2f4f6] bg-white sticky top-[56px] z-[9] px-5 max-w-[1280px] w-full mx-auto">
           <button
             className={clsx(
               "flex-1 py-3.5 text-[15px] font-semibold tracking-[-0.3px] transition-all relative",
@@ -135,16 +137,20 @@ export default function TripsListPage() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto pb-[100px] scrollbar-hide">
+        <div className="flex-1 overflow-y-auto pb-[100px] scrollbar-hide max-w-[1280px] w-full mx-auto">
           {displayTrips.length > 0 ? (
-            <div className="flex flex-col">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-0 md:gap-4 md:px-5 md:pt-4">
               {displayTrips.map((trip, index) => (
-                <TripCard
+                <div
                   key={trip.id}
-                  trip={trip}
-                  isLast={index === displayTrips.length - 1}
-                  onClick={() => router.push(`/trips/${trip.id}`)}
-                />
+                  className="bg-white md:rounded-2xl md:border md:border-[#f2f4f6] md:shadow-sm"
+                >
+                  <TripCard
+                    trip={trip}
+                    isLast={index === displayTrips.length - 1 || true} // Grid에서는 항상 실선 제거 느낌으로
+                    onClick={() => router.push(`/trips/${trip.id}`)}
+                  />
+                </div>
               ))}
             </div>
           ) : (

@@ -53,7 +53,7 @@ function IntroContent() {
   };
 
   return (
-    <MobileContainer>
+    <MobileContainer className="mx-auto">
       <div className="relative flex flex-1 flex-col overflow-hidden bg-white">
         {/* Background Decorative Elements */}
         <div className="absolute top-0 left-0 w-full h-[300px] bg-gradient-to-b from-[#f8f6ff] to-transparent pointer-events-none" />

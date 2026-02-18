@@ -35,7 +35,7 @@ export default function SignupPage() {
   };
 
   return (
-    <MobileContainer>
+    <MobileContainer className="mx-auto">
       <div className="p-6 flex flex-col h-full w-full bg-[#ffffff] text-[#111111]">
         {/* Header - Keeping existing Image button logic but adapting wrapper */}
         <div className="flex items-center gap-4 pt-0 pb-6">
