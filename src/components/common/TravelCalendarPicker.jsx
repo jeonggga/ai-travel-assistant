@@ -27,7 +27,7 @@ const getWeatherIcon = (date) => {
     "/icons/weather-clear.svg",
     "/icons/weather-rainy.svg",
   ];
-  
+
   // Pattern based on date for demo
   if (day % 7 === 1 || day % 7 === 0) return weatherPatterns[0]; // sunny
   if (day % 7 === 5 || day % 7 === 6) return weatherPatterns[3]; // clear
@@ -37,8 +37,10 @@ const getWeatherIcon = (date) => {
 };
 
 export const TravelCalendarPicker = ({ startDate, endDate, onChange }) => {
-  const currentMonth = new Date(2026, 1); // February 2026
-  const nextMonth = addMonths(currentMonth, 1); // March 2026
+  const today = new Date();
+  const months = Array.from({ length: 6 }, (_, i) =>
+    addMonths(startOfMonth(today), i),
+  );
 
   const onDateClick = (day) => {
     if (!startDate || (startDate && endDate)) {
@@ -89,23 +91,22 @@ export const TravelCalendarPicker = ({ startDate, endDate, onChange }) => {
           isInRange = true;
         }
 
-        const textColor = isSelected || isInRange
-          ? "text-white"
-          : dayOfWeek === 0
-            ? "text-[#ff3344]"
-            : dayOfWeek === 6
-              ? "text-[#0091ff]"
-              : "text-[#111111]";
+        const textColor =
+          isSelected || isInRange
+            ? "text-white"
+            : dayOfWeek === 0
+              ? "text-[#ff3344]"
+              : dayOfWeek === 6
+                ? "text-[#0091ff]"
+                : "text-[#111111]";
 
         days.push(
           <div
             key={day.toString()}
-            className={clsx(
-              "flex flex-col items-center gap-2 cursor-pointer",
-              {
-                "opacity-0 pointer-events-none": !isCurrentMonth,
-              }
-            )}
+            className={clsx("flex flex-col items-center gap-2", {
+              "opacity-0 pointer-events-none": !isCurrentMonth,
+              "cursor-pointer": isCurrentMonth,
+            })}
             onClick={() => isCurrentMonth && onDateClick(cloneDay)}
           >
             <div
@@ -114,7 +115,7 @@ export const TravelCalendarPicker = ({ startDate, endDate, onChange }) => {
                 textColor,
                 {
                   "bg-[#111111] rounded": isSelected || isInRange,
-                }
+                },
               )}
             >
               {format(day, "d")}
@@ -128,14 +129,14 @@ export const TravelCalendarPicker = ({ startDate, endDate, onChange }) => {
                 className="w-6 h-6"
               />
             )}
-          </div>
+          </div>,
         );
         day = addDays(day, 1);
       }
       rows.push(
         <div className="flex justify-between gap-[3px]" key={day.toString()}>
           {days}
-        </div>
+        </div>,
       );
       days = [];
     }
@@ -143,22 +144,15 @@ export const TravelCalendarPicker = ({ startDate, endDate, onChange }) => {
   };
 
   return (
-    <div className="flex flex-col gap-5 pb-4">
-      {/* February 2026 */}
-      <div className="flex flex-col gap-5">
-        <h3 className="text-base font-semibold text-[#111111] tracking-[-0.5px]">
-          {format(currentMonth, "yyyy년 M월", { locale: ko })}
-        </h3>
-        <div className="flex flex-col gap-7">{renderMonth(currentMonth)}</div>
-      </div>
-
-      {/* March 2026 */}
-      <div className="flex flex-col gap-5">
-        <h3 className="text-base font-semibold text-[#111111] tracking-[-0.5px]">
-          {format(nextMonth, "yyyy년 M월", { locale: ko })}
-        </h3>
-        <div className="flex flex-col gap-7">{renderMonth(nextMonth)}</div>
-      </div>
+    <div className="flex flex-col gap-10 pb-10">
+      {months.map((month, idx) => (
+        <div key={idx} className="flex flex-col gap-5">
+          <h3 className="text-base font-semibold text-[#111111] tracking-[-0.5px]">
+            {format(month, "yyyy년 M월", { locale: ko })}
+          </h3>
+          <div className="flex flex-col gap-7">{renderMonth(month)}</div>
+        </div>
+      ))}
     </div>
   );
 };

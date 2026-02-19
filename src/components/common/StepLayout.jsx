@@ -14,7 +14,7 @@ export const StepLayout = ({
 }) => {
   return (
     <MobileContainer>
-      <div className="flex flex-col h-full bg-white relative">
+      <div className="flex flex-col h-screen bg-white relative">
         {/* Header */}
         {showHeader && (
           <div className="px-6 pt-8 pb-6 shrink-0 bg-white">
