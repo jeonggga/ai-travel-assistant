@@ -9,6 +9,7 @@ import {
   startOfWeek,
   endOfWeek,
   isSameDay,
+  isSameMonth,
   isWithinInterval,
   addDays,
   getDay,
@@ -16,6 +17,7 @@ import {
 import { ko } from "date-fns/locale";
 import Image from "next/image";
 import { clsx } from "clsx";
+import { useRef, useEffect } from "react";
 
 // Mock weather data - in real app this would come from an API
 const getWeatherIcon = (date) => {
@@ -38,9 +40,22 @@ const getWeatherIcon = (date) => {
 
 export const TravelCalendarPicker = ({ startDate, endDate, onChange }) => {
   const today = new Date();
-  const months = Array.from({ length: 6 }, (_, i) =>
-    addMonths(startOfMonth(today), i),
+  const months = Array.from({ length: 25 }, (_, i) =>
+    addMonths(startOfMonth(today), i - 12),
   );
+  const currentMonthRef = useRef(null);
+
+  useEffect(() => {
+    if (currentMonthRef.current) {
+      // Small timeout to ensure layout is complete before scrolling
+      setTimeout(() => {
+        currentMonthRef.current.scrollIntoView({
+          behavior: "auto",
+          block: "start",
+        });
+      }, 100);
+    }
+  }, []);
 
   const onDateClick = (day) => {
     if (!startDate || (startDate && endDate)) {
@@ -145,14 +160,21 @@ export const TravelCalendarPicker = ({ startDate, endDate, onChange }) => {
 
   return (
     <div className="flex flex-col gap-10 pb-10">
-      {months.map((month, idx) => (
-        <div key={idx} className="flex flex-col gap-5">
-          <h3 className="text-base font-semibold text-[#111111] tracking-[-0.5px]">
-            {format(month, "yyyy년 M월", { locale: ko })}
-          </h3>
-          <div className="flex flex-col gap-7">{renderMonth(month)}</div>
-        </div>
-      ))}
+      {months.map((month, idx) => {
+        const isTodayMonth = isSameMonth(month, today);
+        return (
+          <div
+            key={idx}
+            ref={isTodayMonth ? currentMonthRef : null}
+            className="flex flex-col gap-5"
+          >
+            <h3 className="text-base font-semibold text-[#111111] tracking-[-0.5px]">
+              {format(month, "yyyy년 M월", { locale: ko })}
+            </h3>
+            <div className="flex flex-col gap-7">{renderMonth(month)}</div>
+          </div>
+        );
+      })}
     </div>
   );
 };
