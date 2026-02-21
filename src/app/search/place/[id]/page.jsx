@@ -15,15 +15,25 @@ export default function SearchPlaceDetailPage() {
   const params = useParams();
   const { id } = params;
 
-  // [ADD] Mock Data: 제주산방산탄산온천 데이터 정의
-  // (추후 id에 따라 동적 데이터 로딩 가능)
-  const placeData = {
-    name: "제주산방산탄산온천",
-    category: "온천",
-    address: "제주특별자치도 서귀포시 안덕면 사계북로 41번길 192",
-    rating: 4.8,
-    reviewCount: 128,
-  };
+  const [placeData, setPlaceData] = useState({
+    name: "장소 정보",
+    category: "...",
+    address: "주소를 불러오는 중입니다",
+    rating: 0,
+    reviewCount: 0,
+  });
+
+  // [ADD] 로컬 스토리지에서 실제 데이터 불러오기
+  React.useEffect(() => {
+    const savedData = localStorage.getItem(`place_${id}`);
+    if (savedData) {
+      try {
+        setPlaceData(JSON.parse(savedData));
+      } catch (e) {
+        console.error("Failed to parse saved place data", e);
+      }
+    }
+  }, [id]);
 
   return (
     <MobileContainer>

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { MobileContainer } from "../../../../../components/layout/MobileContainer";
@@ -14,16 +14,16 @@ export default function SearchPlaceDetailInfoPage() {
   const params = useParams();
   const { id } = params;
 
-  // Mock Data (PC 버전과 일관성 유지)
-  const placeData = {
-    name: "제주산방산탄산온천",
-    category: "온천",
-    address: "제주특별자치도 서귀포시 안덕면 사계북로 41번길 192",
+  // Placeholder Data (서버에서 추가 정보를 제공하지 않을 경우 대비)
+  const [placeData, setPlaceData] = useState({
+    name: "장소 정보",
+    category: "카테고리",
+    address: "주소 정보",
     description: `이 장소는 방문객들에게 특별한 경험을 제공하는 제주도의 대표적인 명소 중 하나입니다. 
     아름다운 풍경과 함께 여유로운 시간을 보내기에 최적화된 공간이며, 가족, 친구, 연인과 함께 방문하기 좋습니다.
     탄산 온천 시설부터 휴게 공간까지 완벽하게 갖추어져 방문객들의 만족도가 매우 높습니다.`,
-    rating: 4.8,
-    reviewCount: 128,
+    rating: 0,
+    reviewCount: 0,
     reviews: [
       {
         user: "김여행",
@@ -42,7 +42,25 @@ export default function SearchPlaceDetailInfoPage() {
         content: "인생 온천을 만났습니다. 시설이 깨끗해서 너무 좋았어요.",
       },
     ],
-  };
+  });
+
+  // [ADD] 로컬 스토리지에서 실제 데이터 동기화
+  useEffect(() => {
+    const savedData = localStorage.getItem(`place_${id}`);
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setPlaceData((prev) => ({
+          ...prev,
+          ...parsed,
+          description: parsed.description || prev.description, // 서버에 설명이 있으면 사용
+          reviews: parsed.reviews || prev.reviews, // 서버에 리뷰가 있으면 사용
+        }));
+      } catch (e) {
+        console.error("Failed to parse saved place data", e);
+      }
+    }
+  }, [id]);
 
   return (
     <MobileContainer>

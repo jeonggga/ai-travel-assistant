@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { clsx } from "clsx";
 import { MobileContainer } from "../../components/layout/MobileContainer";
 import { BottomNavigation } from "../../components/layout/BottomNavigation";
 import { Toast } from "../../components/common/Toast";
+import { searchPlaces } from "../../services/place";
 
 const HighlightText = ({ text, keyword }) => {
   if (!keyword.trim()) return <span>{text}</span>;
@@ -35,6 +36,9 @@ export default function SearchPage() {
   const [isToastVisible, setIsToastVisible] = useState(false);
   const searchParams = useSearchParams();
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+
   // [ADD] 모바일에서 찜하기 후 돌아왔을 때 토스트 감지
   React.useEffect(() => {
     if (searchParams.get("saved") === "true") {
@@ -44,53 +48,56 @@ export default function SearchPage() {
     }
   }, [searchParams]);
 
-  // [ADD] Mock search results (from SearchInputPage)
-  const MOCK_PLACES = [
-    {
-      id: 1,
-      name: "제주산방산탄산온천",
-      address: "제주특별자치도 서귀포시 안덕면 사계북로 41번길 192",
-      category: "온천",
-      rating: 4.8,
-      reviewCount: 128,
-    },
-    {
-      id: 2,
-      name: "산방산",
-      address: "제주특별자치도 서귀포시 안덕면 사계리",
-      category: "자연",
-      rating: 4.5,
-      reviewCount: 85,
-    },
-    {
-      id: 3,
-      name: "카멜리아 힐",
-      address: "제주특별자치도 서귀포시 안덕면 병악로 166",
-      category: "테마파크",
-      rating: 4.7,
-      reviewCount: 240,
-    },
-    {
-      id: 4,
-      name: "헬로키티아일랜드",
-      address: "제주특별자치도 서귀포시 안덕면 한창로 340",
-      category: "박물관",
-      rating: 4.3,
-      reviewCount: 156,
-    },
-    {
-      id: 5,
-      name: "제주신화월드",
-      address: "제주특별자치도 서귀포시 안덕면 신화역사로304번길 38",
-      category: "리조트",
-      rating: 4.6,
-      reviewCount: 312,
-    },
-  ];
+  // [ADD] 서버 데이터(LocationModel Map)를 프론트엔드용 배열로 변환
+  const transformServerData = (data) => {
+    if (!data) return [];
+    // FastAPI 응답은 키가 인덱스인 객체 맵 형식일 수 있으므로 배열로 변환
+    const items =
+      typeof data === "object" && !Array.isArray(data)
+        ? Object.values(data)
+        : data;
 
-  const filteredPlaces = searchQuery.trim()
-    ? MOCK_PLACES.filter((place) => place.name.includes(searchQuery))
-    : [];
+    return items.map((item) => ({
+      id: item.id, // Kakao Place ID
+      name: item.name,
+      address: item.address,
+      category: item.group_name || item.category || "장소",
+      rating: 0,
+      reviewCount: 0,
+      longitude: parseFloat(item.longitude),
+      latitude: parseFloat(item.latitude),
+      link: item.link,
+      phone: item.phone,
+    }));
+  };
+
+  // [ADD] 검색 API 호출 로직 (PC용 디바운스)
+  useEffect(() => {
+    const fetchResults = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await searchPlaces(searchQuery);
+        const transformedData = transformServerData(response.data);
+        setSearchResults(transformedData);
+      } catch (error) {
+        console.error("Place search failed:", error);
+        setSearchResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      fetchResults();
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   return (
     <MobileContainer showNav={true} className="!max-w-none">
@@ -227,12 +234,25 @@ export default function SearchPage() {
                 {/* [ADD] Search Results List (PC Inline) */}
                 {searchQuery.trim() ? (
                   <div className="flex-1 overflow-y-auto mt-6 scrollbar-hide">
-                    {filteredPlaces.length > 0 ? (
+                    {isLoading ? (
+                      <div className="flex flex-col items-center justify-center pt-20 text-[#abb1b9]">
+                        <p className="text-[14px] font-medium animate-pulse">
+                          검색 중...
+                        </p>
+                      </div>
+                    ) : searchResults.length > 0 ? (
                       <div className="flex flex-col gap-5 pb-10">
-                        {filteredPlaces.map((place) => (
+                        {searchResults.map((place) => (
                           <div
-                            key={place.id}
-                            onClick={() => setSelectedPlace(place)}
+                            key={`${place.id}-${place.name}`}
+                            onClick={() => {
+                              // [MOD] 로컬 데이터 상세 뷰를 위해 저장
+                              localStorage.setItem(
+                                `place_${place.id}`,
+                                JSON.stringify(place),
+                              );
+                              setSelectedPlace(place);
+                            }}
                             className="flex flex-col gap-1 cursor-pointer hover:bg-gray-50 -mx-2 px-2 py-1 rounded-lg transition-colors group"
                           >
                             <div className="flex items-center justify-between">
@@ -246,7 +266,7 @@ export default function SearchPage() {
                                 {place.category}
                               </span>
                             </div>
-                            <div className="flex flex-col gap-0.5 mt-0.5">
+                            <div className="flex flex-col gap-0.5 mt-1">
                               <p className="text-[12px] text-[#898989] line-clamp-1">
                                 {place.address}
                               </p>
