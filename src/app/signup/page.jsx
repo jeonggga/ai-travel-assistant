@@ -112,7 +112,7 @@
 //               계정이 이미 있나요?{" "}
 //               <button
 //                 type="button"
-//                 onClick={() => router.push("/intro")}
+//                 onClick={() => router.push("/login")}
 //                 className="underline"
 //               >
 //                 로그인

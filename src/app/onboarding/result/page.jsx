@@ -169,7 +169,7 @@ export default function ResultPage() {
   };
 
   const handleSaveSchedule = () => {
-    router.push("/intro?from=result_save&showClose=true");
+    router.push("/login?from=result_save&showClose=true");
   };
 
   const renderTabContent = () => {
@@ -537,7 +537,7 @@ export default function ResultPage() {
         {/* Header */}
         <div className="fixed top-0 left-0 right-0 px-6 pt-4 pb-4 flex items-center justify-between bg-white z-10 shadow-sm">
           <div className="flex items-center gap-4">
-            <button onClick={() => router.push("/intro")}>
+            <button onClick={() => router.push("/login")}>
               <Image
                 src="/icons/close-icon.svg"
                 alt="close"

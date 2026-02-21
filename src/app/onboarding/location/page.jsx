@@ -22,7 +22,7 @@ export default function LocationInputPage() {
   return (
     <StepLayout
       title="어디로 여행 가시나요?"
-      onBack={() => router.push("/intro")}
+      onBack={() => router.push("/login")}
       footer={
         <BottomCTAButton onClick={handleNext} disabled={!location.trim()}>
           다음
