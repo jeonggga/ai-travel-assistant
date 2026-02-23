@@ -37,7 +37,6 @@ export default function SearchClient() {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlace, setSelectedPlace] = useState(null);
-  const [isSecondaryPanelOpen, setIsSecondaryPanelOpen] = useState(false);
   const [isToastVisible, setIsToastVisible] = useState(false);
   const searchParams = useSearchParams();
 
@@ -54,7 +53,6 @@ export default function SearchClient() {
           const parsed = JSON.parse(savedData);
           setSelectedPlace(parsed);
           setIsSidePanelOpen(true);
-          setIsSecondaryPanelOpen(true);
         } catch (e) {
           console.error("Failed to parse place data for select param", e);
         }
@@ -204,9 +202,7 @@ export default function SearchClient() {
         <div
           className={clsx(
             "hidden lg:flex flex-col h-full bg-white border-r border-[#f2f4f6] z-20 transition-all duration-300 ease-in-out relative",
-            isSidePanelOpen
-              ? clsx("w-[400px]", !isSecondaryPanelOpen && "lg:shadow-2xl")
-              : "w-0 border-none",
+            isSidePanelOpen ? "w-[400px] lg:shadow-2xl" : "w-0 border-none",
           )}
         >
           <div
@@ -216,8 +212,8 @@ export default function SearchClient() {
             )}
           >
             {selectedPlace ? (
-              <div className="flex flex-col h-full">
-                <div className="flex items-center mb-8">
+              <div className="flex flex-col h-full overflow-y-auto scrollbar-hide pt-2">
+                <div className="sticky top-0 bg-white z-10 flex items-center mb-6 pb-2">
                   <button
                     onClick={() => setSelectedPlace(null)}
                     className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -251,25 +247,36 @@ export default function SearchClient() {
                       <p className="text-[14px] text-[#6e6e6e] leading-relaxed">
                         {selectedPlace.address}
                       </p>
-                      <div className="flex items-center gap-1">
-                        <span className="text-[13px] font-bold text-[#7a28fa]">
-                          ★ {selectedPlace.rating}
-                        </span>
-                        <span className="text-[13px] text-[#abb1b9]">
-                          ({selectedPlace.reviewCount})
-                        </span>
+                      <div className="flex flex-col gap-0.5 mt-0.5">
+                        {selectedPlace.phone && (
+                          <p className="text-[13px] text-[#6e6e6e] flex items-center gap-1">
+                            📞{" "}
+                            <a
+                              href={`tel:${selectedPlace.phone}`}
+                              className="hover:underline"
+                            >
+                              {selectedPlace.phone}
+                            </a>
+                          </p>
+                        )}
+                        {selectedPlace.link && (
+                          <p className="text-[13px] text-[#6e6e6e] flex items-center gap-1 overflow-hidden">
+                            🔗{" "}
+                            <a
+                              href={selectedPlace.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:underline text-[#7a28fa] truncate"
+                            >
+                              {selectedPlace.link}
+                            </a>
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 flex flex-col gap-1">
-                    <button
-                      onClick={() => setIsSecondaryPanelOpen(true)}
-                      className="w-full h-[56px] border border-[#111111] text-[#111111] rounded-2xl text-[16px] font-bold hover:bg-gray-50 active:scale-[0.98] transition-all"
-                    >
-                      상세정보
-                    </button>
-
+                  <div className="mt-2 flex flex-col gap-1">
                     <button
                       onClick={async () => {
                         try {
@@ -308,18 +315,73 @@ export default function SearchClient() {
 
                           setSelectedPlace(null);
                           setSearchQuery("");
-                          setIsSecondaryPanelOpen(false);
                           setIsToastVisible(true);
                         } catch (error) {
                           console.error("Failed to register place:", error);
                           // 에러 처리 로직 (필요시 추가 토스트 등)
                         }
                       }}
-                      className="w-full h-[56px] bg-[#111111] text-white rounded-2xl text-[16px] font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg"
+                      className="w-full h-[56px] bg-[#111111] text-white rounded-2xl text-[16px] font-bold hover:opacity-90 active:scale-[0.98] transition-all"
                     >
                       찜한 장소로 등록하기
                     </button>
                   </div>
+
+                  <div className="h-[1px] bg-[#f2f4f6] mt-2" />
+
+                  <section>
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="text-[16px] font-bold text-[#111111]">
+                        리뷰{" "}
+                        <span className="text-[#abb1b9] font-medium ml-1">
+                          {selectedPlace.reviewCount}
+                        </span>
+                      </h3>
+                      <div className="flex items-center gap-1">
+                        <span className="text-[#7a28fa] text-[14px]">★</span>
+                        <span className="text-[16px] font-bold text-[#7a28fa]">
+                          {selectedPlace?.rating}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-6">
+                      {[
+                        {
+                          user: "김여행",
+                          rating: 5,
+                          content:
+                            "부모님 모시고 갔는데 정말 좋아하셨어요! 물이 정말 깨끗하고 시설도 훌륭합니다.",
+                        },
+                        {
+                          user: "이제주",
+                          rating: 4,
+                          content:
+                            "경치가 너무 예뻐요. 다음에 제주도 오면 또 올 거예요!",
+                        },
+                        {
+                          user: "박온천",
+                          rating: 5,
+                          content:
+                            "인생 온천을 만났습니다. 시설이 깨끗해서 너무 좋았어요.",
+                        },
+                      ].map((review, i) => (
+                        <div key={i} className="flex flex-col gap-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[14px] font-bold text-[#111111]">
+                              {review.user}
+                            </span>
+                            <div className="flex text-[#7a28fa] text-[10px]">
+                              {"★".repeat(review.rating)}
+                            </div>
+                          </div>
+                          <p className="text-[13px] text-[#6e6e6e] leading-snug">
+                            {review.content}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
                 </div>
               </div>
             ) : (
@@ -338,7 +400,7 @@ export default function SearchClient() {
                   />
                   <input
                     type="text"
-                    placeholder="장소, 숙소, 교통버스 검색"
+                    placeholder="장소, 숙소, 버스 검색"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="flex-1 bg-transparent text-[16px] font-medium text-[#111111] placeholder:text-[#abb1b9] outline-none"
@@ -430,12 +492,9 @@ export default function SearchClient() {
                     )}
                   </div>
                 ) : (
-                  <div className="mt-6">
-                    <p className="text-[14px] font-bold text-[#111111] mb-3">
-                      추천 카테고리
-                    </p>
+                  <div className="mt-4">
                     <div className="flex flex-wrap gap-2">
-                      {["음식점", "카페", "버스정류장", "숙소", "주유소"].map(
+                      {["음식점", "카페", "편의점", "숙소", "버스"].map(
                         (category) => (
                           <button
                             key={category}
@@ -469,7 +528,7 @@ export default function SearchClient() {
               }, 300);
             }}
             className={clsx(
-              "absolute top-1/2 -translate-y-1/2 -right-4 w-8 h-12 bg-white border border-[#f2f4f6] rounded-r-xl shadow-md z-30 flex items-center justify-center hover:bg-gray-50 transition-all",
+              "absolute top-1/2 -translate-y-1/2 -right-4 w-8 h-12 bg-white border border-[#f2f4f6] rounded-xl shadow-md z-30 flex items-center justify-center hover:bg-gray-50 transition-all",
               !isSidePanelOpen && "!-right-10 rounded-xl",
             )}
           >
@@ -484,156 +543,6 @@ export default function SearchClient() {
               )}
             />
           </button>
-        </div>
-
-        <div
-          className={clsx(
-            "hidden lg:flex flex-col h-full bg-white border-r border-[#f2f4f6] z-10 transition-all duration-300 ease-in-out relative",
-            isSecondaryPanelOpen && selectedPlace
-              ? "w-[400px] lg:shadow-2xl"
-              : "w-0 border-none overflow-hidden",
-          )}
-        >
-          <div
-            className={clsx(
-              "flex flex-col h-full w-[400px] transition-opacity duration-200",
-              isSecondaryPanelOpen
-                ? "opacity-100"
-                : "opacity-0 pointer-events-none",
-            )}
-          >
-            <div className="flex items-center justify-between p-6 border-b border-[#f2f4f6]">
-              <h2 className="text-[18px] font-bold text-[#111111]">
-                상세 정보
-              </h2>
-              <button
-                onClick={() => setIsSecondaryPanelOpen(false)}
-                className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto scrollbar-hide">
-              {/* [MOD] 지도를 이미지로 변경 및 존재할 때만 표시 */}
-              {selectedPlace?.image && (
-                <div className="relative w-full h-[300px] bg-gray-100">
-                  <Image
-                    src={selectedPlace.image}
-                    alt={selectedPlace.name}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  <div className="absolute bottom-8 left-6 right-6">
-                    <h1 className="text-[26px] font-bold text-white mb-2 tracking-[-1px]">
-                      {selectedPlace?.name}
-                    </h1>
-                    <p className="text-[14px] text-white/90">
-                      {selectedPlace?.address}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              <div className="p-6">
-                {/* [ADD] 이미지가 없을 경우 제목과 주소를 본문에 표시 */}
-                {!selectedPlace?.image && (
-                  <div className="mb-8 p-1 flex flex-col gap-2">
-                    <div className="flex">
-                      <span className="text-[12px] font-semibold text-[#7a28fa] bg-[#f9f5ff] px-2 py-0.5 rounded">
-                        {selectedPlace?.category}
-                      </span>
-                    </div>
-                    <h1 className="text-[28px] font-bold text-[#111111] mb-2 tracking-[-1px]">
-                      {selectedPlace?.name}
-                    </h1>
-                    <p className="text-[15px] text-[#6e6e6e]">
-                      {selectedPlace?.address}
-                    </p>
-                  </div>
-                )}
-                <div className="flex flex-col gap-8">
-                  <section>
-                    <h3 className="text-[16px] font-bold text-[#111111] mb-3">
-                      장소 소개
-                    </h3>
-                    <p className="text-[14px] text-[#4e4e4e] leading-[1.6] tracking-[-0.3px]">
-                      이 장소는 방문객들에게 특별한 경험을 제공하는 제주도의
-                      대표적인 명소 중 하나입니다. 아름다운 풍경과 함께 여유로운
-                      시간을 보내기에 최적화된 공간이며, 가족, 친구, 연인과 함께
-                      방문하기 좋습니다. 탄산 온천 시설부터 휴게 공간까지
-                      완벽하게 갖추어져 방문객들의 만족도가 매우 높습니다.
-                    </p>
-                  </section>
-
-                  <div className="h-[1px] bg-[#f2f4f6]" />
-
-                  <section>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-[16px] font-bold text-[#111111]">
-                        리뷰
-                      </h3>
-                      <span className="text-[13px] font-medium text-[#7a28fa]">
-                        {selectedPlace?.rating} ★ ({selectedPlace?.reviewCount})
-                      </span>
-                    </div>
-
-                    <div className="flex flex-col gap-6">
-                      {[
-                        {
-                          user: "김여행",
-                          rating: 5,
-                          content:
-                            "부모님 모시고 갔는데 정말 좋아하셨어요! 물이 정말 깨끗하고 시설도 훌륭합니다.",
-                        },
-                        {
-                          user: "이제주",
-                          rating: 4,
-                          content:
-                            "경치가 너무 예뻐요. 다음에 제주도 오면 또 올 거예요!",
-                        },
-                        {
-                          user: "박온천",
-                          rating: 5,
-                          content:
-                            "인생 온천을 만났습니다. 시설이 깨끗해서 너무 좋았어요.",
-                        },
-                      ].map((review, i) => (
-                        <div key={i} className="flex flex-col gap-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[14px] font-bold text-[#111111]">
-                              {review.user}
-                            </span>
-                            <div className="flex text-[#7a28fa] text-[10px]">
-                              {"★".repeat(review.rating)}
-                            </div>
-                          </div>
-                          <p className="text-[13px] text-[#6e6e6e] leading-snug">
-                            {review.content}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="relative flex-1 h-full overflow-hidden">
@@ -654,21 +563,19 @@ export default function SearchClient() {
                 className="opacity-50"
               />
               <div className="flex-1 text-[16px] font-medium text-[#abb1b9]">
-                장소, 숙소, 교통버스 검색
+                장소, 숙소, 버스 검색
               </div>
             </div>
 
             <div className="mt-3 flex overflow-x-auto gap-2 scrollbar-hide pb-2 px-5 -mx-5 text-black">
-              {["음식점", "카페", "버스정류장", "숙소", "주유소"].map(
-                (category) => (
-                  <button
-                    key={category}
-                    className="whitespace-nowrap px-4 py-2 bg-white rounded-full text-[14px] font-semibold text-[#111111] shadow-md border border-[#f2f4f6] hover:bg-gray-50 active:scale-95 transition-all"
-                  >
-                    {category}
-                  </button>
-                ),
-              )}
+              {["음식점", "카페", "편의점", "숙소", "버스"].map((category) => (
+                <button
+                  key={category}
+                  className="whitespace-nowrap px-4 py-2 bg-white rounded-full text-[14px] font-semibold text-[#111111] shadow-md border border-[#f2f4f6] hover:bg-gray-50 active:scale-95 transition-all"
+                >
+                  {category}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -679,7 +586,7 @@ export default function SearchClient() {
           message="찜한 장소로 등록되었어요"
           actionText="목록보기"
           onAction={() => router.push("/profile")}
-          position={isSecondaryPanelOpen || selectedPlace ? "top" : "bottom"}
+          position={selectedPlace ? "top" : "bottom"}
         />
 
         <BottomNavigation />

@@ -22,11 +22,12 @@ export default function SearchPlaceDetailPage() {
   const [placeData, setPlaceData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
+  const [showReviews, setShowReviews] = useState(false); // [ADD] 리뷰 영역 표시 여부 상태
 
   // [ADD] 바텀시트 드래그 상태 관리
-  const [dragY, setDragY] = useState(0);
+  const [dragY, setDragY] = useState(0); // [MOD] 초기 높이를 전체 확장 상태(0)로 복구
   const [isDragging, setIsDragging] = useState(false);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false); // [MOD] 초기 상태를 '확장 뷰'로 복구
   const startY = useRef(0);
   const sheetRef = useRef(null);
 
@@ -145,28 +146,21 @@ export default function SearchPlaceDetailPage() {
     const currentY = e.touches[0].clientY;
     const deltaY = currentY - startY.current;
 
-    // [MOD] 드래그 범위 조정: 최소화 상태에서도 핸들이 보이도록 제한
-    // 시트가 약간만 보이게 하기 위해 최대 250px 정도로 제한 (전체 높이가 약 300px 가정)
-    if (isMinimized) {
-      const newY = Math.min(Math.max(deltaY + 250, 0), 300);
-      setDragY(newY);
-    } else {
-      const newY = Math.max(deltaY, 0);
-      setDragY(newY);
-    }
+    // [MOD] 드래그 범위 조정: 초기 위치(0)를 기준으로 아래로만 드래그 가능하게 단순화
+    const newY = Math.max(deltaY, 0);
+    setDragY(newY);
   };
 
   const handleTouchEnd = () => {
     setIsDragging(false);
-    // [MOD] 임계값 및 고정 위치 조정 - 최소화 상태에서도 핸들이 충분히 보이도록 함
-    // (바텀시트의 콘텐츠 일부와 핸들이 함께 노출됨)
-    if (dragY > 100) {
+    if (dragY > 40) {
       setIsMinimized(true);
-      setDragY(220); // 시트 높이에 따라 조절 (핸들이 화면 하단에서 약 80px 정도 노출되게)
+      setShowReviews(false);
     } else {
       setIsMinimized(false);
-      setDragY(0); // 완전히 올린 상태
+      setShowReviews(true); // [ADD] 위로 올릴 때 리뷰 자동 노출하여 높이 동기화
     }
+    setDragY(0); // [MOD] 사용자가 설정한 초기 높이(0)로 완벽하게 되돌림
   };
 
   return (
@@ -204,7 +198,7 @@ export default function SearchPlaceDetailPage() {
         {/* [ADD] 하단 바텀시트 섹션 */}
         <div
           ref={sheetRef}
-          className={`absolute bottom-0 left-0 right-0 z-20 bg-white rounded-t-[32px] shadow-[0_-12px_40px_rgba(0,0,0,0.12)] px-5 pt-10 pb-10 max-w-[430px] mx-auto transition-transform ${isDragging ? "" : "duration-300 ease-out"}`}
+          className={`absolute bottom-0 left-0 right-0 z-20 bg-white rounded-t-[24px] shadow-[0_-12px_40px_rgba(0,0,0,0.12)] px-5 pt-8 pb-2 max-w-[430px] mx-auto transition-transform ${isDragging ? "" : "duration-300 ease-out"}`}
           style={{ transform: `translateY(${dragY}px)` }}
         >
           {/* [MOD] 드래그 핸들: 시인성 강화 (두께, 색상, 높이 조정) */}
@@ -232,26 +226,60 @@ export default function SearchPlaceDetailPage() {
                   <p className="text-[14px] text-[#6e6e6e] tracking-[-0.3px] leading-relaxed">
                     {placeData.address}
                   </p>
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-col gap-0.5 mt-0.5">
+                    {placeData.phone && (
+                      <p className="text-[13px] text-[#6e6e6e] flex items-center gap-1">
+                        📞{" "}
+                        <a
+                          href={`tel:${placeData.phone}`}
+                          className="hover:underline"
+                        >
+                          {placeData.phone}
+                        </a>
+                      </p>
+                    )}
+                    {placeData.link && (
+                      <p className="text-[13px] text-[#6e6e6e] flex items-center gap-1 overflow-hidden">
+                        🔗{" "}
+                        <a
+                          href={placeData.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:underline text-[#7a28fa] truncate"
+                        >
+                          {placeData.link}
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 mt-1">
                     <span className="text-[13px] font-bold text-[#7a28fa]">
                       ★ {placeData.rating}
                     </span>
                     <span className="text-[13px] text-[#abb1b9]">
                       ({placeData.reviewCount})
                     </span>
+                    {!showReviews && (
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => {
+                            setShowReviews(true);
+                            setIsMinimized(false);
+                            setDragY(0);
+                          }}
+                          className="text-[13px] font-bold text-[#6e6e6e] bg-[#f2f4f6] px-3 py-1 rounded-md hover:bg-[#e5e7eb] transition-colors"
+                        >
+                          리뷰보기
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* [ADD] 상세보기 및 찜하기 버튼 */}
-            <div className="flex flex-col gap-2 mt-4">
-              <button
-                onClick={() => router.push(`/search/place/${id}/detail`)}
-                className="w-full h-[56px] border border-[#111111] text-[#111111] rounded-2xl text-[16px] font-bold hover:bg-gray-50 active:scale-[0.98] transition-all"
-              >
-                상세보기
-              </button>
+            {/* [ADD] 리뷰보기 및 찜하기 버튼 */}
+            <div className="flex flex-col gap-2 mt-2">
               {!isSaved && (
                 <button
                   onClick={async () => {
@@ -297,11 +325,75 @@ export default function SearchPlaceDetailPage() {
                       router.push("/search?saved=true");
                     }
                   }}
-                  className="w-full h-[56px] bg-[#111111] text-white rounded-2xl text-[16px] font-bold hover:opacity-90 active:scale-[0.98] transition-all shadow-lg"
+                  className="w-full h-[56px] bg-[#111111] text-white rounded-2xl text-[16px] font-bold hover:opacity-90 active:scale-[0.98] transition-all"
                 >
                   찜한 장소로 등록하기
                 </button>
               )}
+            </div>
+
+            {/* [ADD] 리뷰 섹션 - 애니메이션 컨테이너 적용 (버튼 클릭 시 올라오는 효과) */}
+            <div
+              className={`overflow-hidden transition-all duration-300 ease-out ${
+                showReviews
+                  ? "max-h-[1000px] opacity-100 mt-4"
+                  : "max-h-0 opacity-0 mt-0"
+              }`}
+            >
+              <div className="h-[1px] bg-[#f2f4f6] mb-4" />
+              <section>
+                <div className="flex items-center justify-between mb-5">
+                  <h3 className="text-[16px] font-bold text-[#111111]">
+                    리뷰{" "}
+                    <span className="text-[#abb1b9] font-medium ml-1">
+                      {placeData?.reviewCount}
+                    </span>
+                  </h3>
+                  <div className="flex items-center gap-1">
+                    <span className="text-[#7a28fa] text-[14px]">★</span>
+                    <span className="text-[16px] font-bold text-[#7a28fa]">
+                      {placeData?.rating}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-6">
+                  {[
+                    {
+                      user: "김여행",
+                      rating: 5,
+                      content:
+                        "부모님 모시고 갔는데 정말 좋아하셨어요! 물이 정말 깨끗하고 시설도 훌륭합니다.",
+                    },
+                    {
+                      user: "이제주",
+                      rating: 4,
+                      content:
+                        "경치가 너무 예뻐요. 다음에 제주도 오면 또 올 거예요!",
+                    },
+                    {
+                      user: "박온천",
+                      rating: 5,
+                      content:
+                        "인생 온천을 만났습니다. 시설이 깨끗해서 너무 좋았어요.",
+                    },
+                  ].map((review, i) => (
+                    <div key={i} className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[14px] font-bold text-[#111111]">
+                          {review.user}
+                        </span>
+                        <div className="flex text-[#7a28fa] text-[10px]">
+                          {"★".repeat(review.rating)}
+                        </div>
+                      </div>
+                      <p className="text-[13px] text-[#6e6e6e] leading-snug">
+                        {review.content}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </section>
             </div>
           </div>
         </div>

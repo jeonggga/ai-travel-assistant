@@ -18,6 +18,8 @@ export default function PlaceDetailPage() {
     rating: 4.5,
     reviewCount: 1240,
     address: "제주특별자치도 제주시 탑동로 11길 6",
+    phone: "064-727-1112",
+    link: "https://www.instagram.com/jamae_guksu/",
     description: "진한 고기국수 육수가 일품인 제주 맛집",
     images: ["🍜", "🥩", "🍲"],
   };
@@ -48,8 +50,27 @@ export default function PlaceDetailPage() {
           </span>
         </div>
 
-        <p className="text-sm text-[#636366] mb-6 flex items-start gap-1">
+        <p className="text-sm text-[#636366] mb-2 flex items-start gap-1">
           📍 {place.address}
+        </p>
+
+        <p className="text-sm text-[#636366] mb-2 flex items-start gap-1">
+          📞{" "}
+          <a href={`tel:${place.phone}`} className="hover:underline">
+            {place.phone}
+          </a>
+        </p>
+
+        <p className="text-sm text-[#636366] mb-6 flex items-start gap-1 overflow-hidden">
+          🔗{" "}
+          <a
+            href={place.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:underline text-[#7a28fa] truncate"
+          >
+            {place.link}
+          </a>
         </p>
 
         <div className="h-[1px] bg-[#f2f2f7] w-full my-6" />
