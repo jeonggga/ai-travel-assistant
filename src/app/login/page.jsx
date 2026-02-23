@@ -106,7 +106,7 @@ function LoginContent() {
             </div>
 
             {/* 입력 폼 및 로그인 영역 */}
-            <div className="w-full flex flex-col gap-6 mb-8">
+            <div className="w-full lg:max-w-[400px] lg:mx-auto flex flex-col gap-6 mb-8">
               <div className="flex flex-col gap-3">
                 {/* 아이디 입력 필드 */}
                 <div className="relative group">
