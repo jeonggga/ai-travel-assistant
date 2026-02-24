@@ -11,10 +11,11 @@ export const StepLayout = ({
   showHeader = true,
   contentBgColor = "bg-white",
   showDivider = false,
+  fixedFooter = false, // PC에서 하단 고정 여부
 }) => {
   return (
-    <MobileContainer>
-      <div className="flex flex-col h-screen bg-white relative">
+    <MobileContainer className="lg:bg-[#f2f4f6]">
+      <div className="flex flex-col h-screen lg:h-[840px] w-full lg:max-w-[640px] lg:mx-auto lg:my-auto bg-white relative lg:rounded-[28px] overflow-hidden lg:border lg:border-[#e5eaf1]">
         {/* Header */}
         {showHeader && (
           <div className="px-6 pt-8 pb-6 shrink-0 bg-white">
@@ -37,14 +38,26 @@ export const StepLayout = ({
 
         {/* Content Section */}
         <div
-          className={`flex-1 ${contentBgColor} px-5 pt-8 pb-32 overflow-y-auto`}
+          className={`flex-1 flex flex-col ${contentBgColor} px-5 pt-8 pb-32 lg:pb-8 overflow-y-auto`}
         >
-          {children}
+          <div className="flex-none">{children}</div>
+
+          {/* PC (Desktop) 전용 하단 버튼: 콘텐츠 아래 자연스럽게 위치 (fixedFooter가 아닐 때만 렌더링) */}
+          {footer && !fixedFooter && (
+            <div className="hidden lg:flex flex-col gap-4 mt-8">
+              {footer}
+            </div>
+          )}
         </div>
 
-        {/* Bottom Fixed Section */}
+        {/* Bottom Fixed Section (Mobile OR fixedFooter=true PC) */}
         {footer && (
-          <div className="absolute bottom-0 left-0 right-0 bg-white border-t border-[#f2f4f6] z-20">
+          <div
+            className={`fixed bottom-0 left-0 right-0 bg-white border-t border-[#f2f4f6] z-20 ${fixedFooter
+              ? "lg:absolute lg:w-full lg:rounded-b-[28px] overflow-hidden"
+              : "lg:hidden"
+              }`}
+          >
             <div className="px-5 py-4 flex flex-col gap-4">{footer}</div>
           </div>
         )}

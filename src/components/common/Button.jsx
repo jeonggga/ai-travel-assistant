@@ -30,7 +30,7 @@ export const Button = ({
 
 export const BottomCTAButton = ({ children, onClick, disabled }) => {
   return (
-    <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] p-4 z-[100]">
+    <div className="w-full lg:w-[180px] lg:mx-auto">
       <Button variant="primary" fullWidth onClick={onClick} disabled={disabled}>
         {children}
       </Button>

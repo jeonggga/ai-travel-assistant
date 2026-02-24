@@ -52,8 +52,12 @@ function LoginContent() {
 
       // [ADD] 특정 경로(일정 저장 시도 중 로그인)에서 온 경우 처리 로직
       if (from === "result_save") {
-        saveTrip(); // 저장되지 않았던 여행 일정 저장
-        alert("로그인되었습니다. 여행 일정이 저장되었습니다.");
+        try {
+          await saveTrip(); // 저장되지 않았던 여행 일정 저장 (API 호출 포함)
+          alert("로그인되었습니다. 여행 일정이 저장되었습니다.");
+        } catch (tripErr) {
+          alert("로그인은 완료되었으나 일정 저장에 실패했습니다.");
+        }
       }
 
       // [ADD] 메인 홈 화면으로 이동
@@ -65,6 +69,13 @@ function LoginContent() {
         "아이디 또는 비밀번호가 올바르지 않습니다.";
       alert(errorMessage);
       console.error("[Login Error]", err);
+    }
+  };
+
+  // [ADD] 엔터 키 입력 시 로그인 처리
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && userId && password) {
+      handleLogin(e);
     }
   };
 
@@ -115,6 +126,7 @@ function LoginContent() {
                     placeholder="아이디"
                     value={userId}
                     onChange={(e) => setUserId(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     className="w-full h-[60px] bg-[#f5f5f7] border-2 border-transparent focus:border-[#7a28fa]/20 focus:bg-white rounded-2xl px-5 text-[15px] font-medium transition-all outline-none"
                   />
                 </div>
@@ -125,6 +137,7 @@ function LoginContent() {
                     placeholder="비밀번호"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={handleKeyDown}
                     className="w-full h-[60px] bg-[#f5f5f7] border-2 border-transparent focus:border-[#7a28fa]/20 focus:bg-white rounded-2xl px-5 text-[15px] font-medium transition-all outline-none"
                   />
                 </div>

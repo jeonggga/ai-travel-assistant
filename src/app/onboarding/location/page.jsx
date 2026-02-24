@@ -15,7 +15,11 @@ export default function LocationInputPage() {
   const handleNext = () => {
     if (location.trim()) {
       setTravelData({ location });
-      router.push("/onboarding/accommodation");
+      if (travelData.creationType === "manual") {
+        router.push("/onboarding/date");
+      } else {
+        router.push("/onboarding/accommodation");
+      }
     }
   };
 
@@ -33,6 +37,7 @@ export default function LocationInputPage() {
         placeholder="예) 제주도, 오사카, 다낭"
         value={location}
         onChange={(e) => setLocation(e.target.value)}
+        onEnter={handleNext}
         autoFocus
       />
     </StepLayout>

@@ -39,7 +39,12 @@ export default function TravelStylePage() {
 
   const handleNext = () => {
     setTravelData({ styles });
-    router.push("/onboarding/budget");
+    if (travelData.creationType === "manual") {
+      // 1~4번 단계 완료 시 상세 일정 뷰 페이지로 이동
+      router.push("/trips");
+    } else {
+      router.push("/onboarding/budget");
+    }
   };
 
   const handleChange = (newStyles) => {
@@ -49,7 +54,13 @@ export default function TravelStylePage() {
   return (
     <StepLayout
       title="어떤 여행을 선호하시나요?"
-      onBack={() => router.push("/onboarding/transport")}
+      onBack={() => {
+        if (travelData.creationType === "manual") {
+          router.push("/onboarding/companion");
+        } else {
+          router.push("/onboarding/transport");
+        }
+      }}
       footer={
         <BottomCTAButton onClick={handleNext} disabled={styles.length === 0}>
           다음

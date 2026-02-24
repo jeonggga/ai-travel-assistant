@@ -35,9 +35,16 @@ export default function DateSelectionPage() {
   return (
     <StepLayout
       title="여행 기간을 선택해 주세요"
-      onBack={() => router.push("/onboarding/accommodation")}
+      onBack={() => {
+        if (travelData.creationType === "manual") {
+          router.push("/onboarding/location");
+        } else {
+          router.push("/onboarding/accommodation");
+        }
+      }}
       contentBgColor="bg-[#fafafa]"
       showDivider={true}
+      fixedFooter={true}
       footer={
         <>
           <div className="flex items-center justify-between">
