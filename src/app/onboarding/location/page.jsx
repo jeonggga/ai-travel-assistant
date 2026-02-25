@@ -26,6 +26,7 @@ export default function LocationInputPage() {
   return (
     <StepLayout
       title="어디로 여행 가시나요?"
+      isFirstStep={true}
       onBack={() => router.push("/login")}
       footer={
         <BottomCTAButton onClick={handleNext} disabled={!location.trim()}>

@@ -6,10 +6,10 @@ export const SelectChip = ({ label, selected, onClick, multi = false }) => {
     <button
       type="button"
       className={clsx(
-        "px-5 py-3 rounded-full border bg-white text-[#999999] border-[#e5e5e5] text-base font-medium transition-all duration-200 whitespace-nowrap hover:border-[#111111]",
-        {
-          "bg-[#111111] text-white border-[#111111] font-semibold": selected,
-        },
+        "px-5 py-3 rounded-full border text-base transition-all duration-200 whitespace-nowrap hover:border-[#111111]",
+        selected
+          ? "bg-[#111111] text-white border-[#111111] font-semibold"
+          : "bg-white text-[#111111] border-[#e5e5e5] font-medium"
       )}
       onClick={onClick}
     >

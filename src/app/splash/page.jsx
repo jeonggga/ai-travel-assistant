@@ -8,6 +8,12 @@ export default function SplashPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // [ADD] PC 화면(width >= 768px)일 경우 2초 대기 없이 바로 로그인 페이지로 이동
+    if (window.innerWidth >= 768) {
+      router.replace("/login");
+      return;
+    }
+
     const timer = setTimeout(() => {
       router.replace("/login");
     }, 2000);
@@ -16,8 +22,9 @@ export default function SplashPage() {
   }, [router]);
 
   return (
+    // [MOD] PC 화면(md 이상)에서는 전체 화면을 숨기기 위해 md:hidden 클래스 추가
     <div
-      className="flex min-h-screen w-full items-center justify-center"
+      className="flex min-h-screen w-full items-center justify-center md:hidden"
       style={{ backgroundColor: "#000000" }}
     >
       <div

@@ -68,7 +68,7 @@ export default function TravelStylePage() {
       }
     >
       <div className="mb-6">
-        <h3 className="text-base text-text-dim mb-3 font-semibold">
+        <h3 className="text-base text-text-dim mb-3 font-medium">
           활동/관광
         </h3>
         <SelectChipGroup
@@ -80,7 +80,7 @@ export default function TravelStylePage() {
       </div>
 
       <div className="mb-6">
-        <h3 className="text-base text-text-dim mb-3 font-semibold">
+        <h3 className="text-base text-text-dim mb-3 font-medium">
           힐링/자연
         </h3>
         <SelectChipGroup
@@ -92,7 +92,7 @@ export default function TravelStylePage() {
       </div>
 
       <div className="mb-6">
-        <h3 className="text-base text-text-dim mb-3 font-semibold">
+        <h3 className="text-base text-text-dim mb-3 font-medium">
           음식/음료
         </h3>
         <SelectChipGroup
@@ -104,7 +104,7 @@ export default function TravelStylePage() {
       </div>
 
       <div className="mb-6">
-        <h3 className="text-base text-text-dim mb-3 font-semibold">
+        <h3 className="text-base text-text-dim mb-3 font-medium">
           기타 테마
         </h3>
         <SelectChipGroup
