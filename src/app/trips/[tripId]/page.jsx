@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import Script from "next/script";
 import { clsx } from "clsx";
+import SearchModal from "./SearchModal";
 import { MobileContainer } from "../../../components/layout/MobileContainer";
 import { useOnboardingStore } from "../../../store/useOnboardingStore";
 
@@ -269,6 +270,7 @@ export default function TripDetailPage() {
   const [selectedTab, setSelectedTab] = useState("일정");
   const [selectedDay, setSelectedDay] = useState(1);
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(true);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [sheetHeight, setSheetHeight] = useState(478);
   const [isDragging, setIsDragging] = useState(false);
   const [startY, setStartY] = useState(0);
@@ -409,6 +411,26 @@ export default function TripDetailPage() {
     }
   };
 
+  const formatApiDate = (dayIndex) => {
+    const start = trip?.dtDate1 || trip?.startDate;
+    if (!start) return "";
+    try {
+      const date = new Date(start);
+      date.setDate(date.getDate() + (dayIndex - 1));
+      // Set to current time or a default time
+      const now = new Date();
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      const hh = String(now.getHours()).padStart(2, "0");
+      const min = String(now.getMinutes()).padStart(2, "0");
+      const ss = String(now.getSeconds()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+    } catch (e) {
+      return "";
+    }
+  };
+
   useEffect(() => {
     const h = window.innerHeight;
     const max = h * 0.95;
@@ -451,6 +473,26 @@ export default function TripDetailPage() {
         : prev;
     });
     setSheetHeight(closest);
+  };
+
+  const handleAddPlaceClick = () => {
+    // Check if it's desktop/laptop based on window width
+    if (window.innerWidth >= 1024) {
+      setIsSearchModalOpen(true);
+    } else {
+      const formattedDate = formatApiDate(selectedDay);
+      router.push(`/search/input?tripId=${tripId}&day=${selectedDay}&date=${encodeURIComponent(formattedDate)}`);
+    }
+  };
+
+  const handleAddSuccess = () => {
+    // Refresh schedule data
+    if (tripId) {
+      // Small delay to ensure DB updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    }
   };
 
   const renderTabContent = () => {
@@ -501,7 +543,12 @@ export default function TripDetailPage() {
                   {"방문할 장소를 추가해 일정을 채워보세요"}
                 </p>
                 <div className="flex gap-2">
-                  <button className="px-5 py-2.5 bg-white border border-[#d1d5db] text-[#111111] text-[14px] font-semibold rounded-md hover:bg-gray-50 transition-colors">장소 추가</button>
+                  <button
+                    onClick={handleAddPlaceClick}
+                    className="px-5 py-2.5 bg-white border border-[#d1d5db] text-[#111111] text-[14px] font-semibold rounded-md hover:bg-gray-50 transition-colors"
+                  >
+                    장소 추가
+                  </button>
                   <button className="px-5 py-2.5 bg-white border border-[#d1d5db] text-[#111111] text-[14px] font-semibold rounded-md hover:bg-gray-50 transition-colors">찜한 장소로 추가</button>
                 </div>
               </div>
@@ -1068,6 +1115,16 @@ export default function TripDetailPage() {
           )}
         </div>
       </div>
+
+      {/* PC Search Modal */}
+      <SearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        tripId={tripId}
+        day={selectedDay}
+        formattedDate={formatApiDate(selectedDay)}
+        onAddSuccess={handleAddSuccess}
+      />
     </MobileContainer>
   );
 }

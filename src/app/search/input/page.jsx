@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MobileContainer } from "../../../components/layout/MobileContainer";
 import { searchPlaces } from "../../../services/place";
 
@@ -26,6 +26,11 @@ const HighlightText = ({ text, keyword }) => {
 
 export default function SearchInputPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const tripId = searchParams.get("tripId");
+  const day = searchParams.get("day");
+  const dateParam = searchParams.get("date");
+
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("전체"); // [ADD] 드롭다운 카테고리 상태
@@ -225,7 +230,10 @@ export default function SearchInputPage() {
                       `place_${place.id}`,
                       JSON.stringify(place),
                     );
-                    router.push(`/search/place/${place.id}`);
+                    const destUrl = tripId
+                      ? `/search/place/${place.id}?tripId=${tripId}&day=${day}&date=${encodeURIComponent(dateParam || "")}`
+                      : `/search/place/${place.id}`;
+                    router.push(destUrl);
                   }}
                   className="flex flex-col gap-1 cursor-pointer hover:bg-gray-50 -mx-2 px-2 py-1 rounded-lg transition-colors"
                 >

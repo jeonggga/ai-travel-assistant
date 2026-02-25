@@ -35,3 +35,12 @@ export const getScheduleUsers = async (iSchedulePK) => {
     const res = await api.get(`/schedule/user/list?iSchedulePK=${iSchedulePK}`);
     return res.data;
 };
+
+/**
+ * 일정 내 장소 추가 API
+ * @param {Object} data - { iScheduleFK, dtSchedule, strMemo, iLocationFK }
+ */
+export const addScheduleLocation = async (data) => {
+    const res = await api.post("/schedule/location/append", data);
+    return res.data;
+};

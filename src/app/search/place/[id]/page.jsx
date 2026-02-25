@@ -6,6 +6,7 @@ import Image from "next/image";
 import Script from "next/script";
 import { MobileContainer } from "../../../../components/layout/MobileContainer";
 import { registerPlace } from "../../../../services/place";
+import { addScheduleLocation } from "../../../../services/schedule";
 
 /**
  * [ADD] SearchPlaceDetailPage
@@ -15,6 +16,10 @@ import { registerPlace } from "../../../../services/place";
 export default function SearchPlaceDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const tripId = searchParams.get("tripId");
+  const day = searchParams.get("day");
+  const dateParam = searchParams.get("date");
   const { id } = params;
   const mapRef = useRef(null);
   const mapInstance = useRef(null);
@@ -280,65 +285,87 @@ export default function SearchPlaceDetailPage() {
 
             {/* [ADD] 리뷰보기 및 찜하기 버튼 */}
             <div className="flex flex-col gap-2 mt-2">
-              {!isSaved && (
+              {tripId ? (
                 <button
                   onClick={async () => {
                     try {
-                      // [ADD] 장소 등록 API 호출 (PC 버전과 동일하게 개별 예외 처리)
-                      try {
-                        await registerPlace({
-                          id: placeData.id,
-                          name: placeData.name,
-                          address: placeData.address,
-                          category: placeData.category,
-                          latitude: placeData.latitude,
-                          longitude: placeData.longitude,
-                          phone: placeData.phone,
-                          link: placeData.link,
-                        });
-                      } catch (e) {
-                        console.error(
-                          "API registration failed, using local storage fallback:",
-                          e,
-                        );
-                      }
-
-                      // [ADD] 로컬 스토리지 저장 (API 실패 여부와 상관없이 수행되어야 함)
-                      const savedList = JSON.parse(
-                        localStorage.getItem("saved_places") || "[]",
-                      );
-                      if (
-                        !savedList.find(
-                          (p) => String(p.id) === String(placeData.id),
-                        )
-                      ) {
-                        savedList.push(placeData);
-                        localStorage.setItem(
-                          "saved_places",
-                          JSON.stringify(savedList),
-                        );
-                      }
-
-                      router.push("/search?saved=true");
+                      await addScheduleLocation({
+                        iPK: 0,
+                        iScheduleFK: parseInt(tripId),
+                        iLocationFK: placeData.id,
+                        dtSchedule: dateParam,
+                        strMemo: ""
+                      });
+                      router.push(`/trips/${tripId}`);
                     } catch (error) {
-                      console.error("Local save failed:", error);
-                      router.push("/search?saved=true");
+                      console.error("Failed to add place to schedule:", error);
+                      alert("일정에 장소를 추가하지 못했습니다.");
                     }
                   }}
-                  className="w-full h-[56px] bg-[#111111] text-white rounded-2xl text-[16px] font-bold hover:opacity-90 active:scale-[0.98] transition-all"
+                  className="w-full h-[56px] bg-[#7a28fa] text-white rounded-2xl text-[16px] font-bold hover:opacity-90 active:scale-[0.98] transition-all"
                 >
-                  찜한 장소로 등록하기
+                  이 장소를 일정에 추가하기
                 </button>
+              ) : (
+                !isSaved && (
+                  <button
+                    onClick={async () => {
+                      try {
+                        // [ADD] 장소 등록 API 호출 (PC 버전과 동일하게 개별 예외 처리)
+                        try {
+                          await registerPlace({
+                            id: placeData.id,
+                            name: placeData.name,
+                            address: placeData.address,
+                            category: placeData.category,
+                            latitude: placeData.latitude,
+                            longitude: placeData.longitude,
+                            phone: placeData.phone,
+                            link: placeData.link,
+                          });
+                        } catch (e) {
+                          console.error(
+                            "API registration failed, using local storage fallback:",
+                            e,
+                          );
+                        }
+
+                        // [ADD] 로컬 스토리지 저장 (API 실패 여부와 상관없이 수행되어야 함)
+                        const savedList = JSON.parse(
+                          localStorage.getItem("saved_places") || "[]",
+                        );
+                        if (
+                          !savedList.find(
+                            (p) => String(p.id) === String(placeData.id),
+                          )
+                        ) {
+                          savedList.push(placeData);
+                          localStorage.setItem(
+                            "saved_places",
+                            JSON.stringify(savedList),
+                          );
+                        }
+
+                        router.push("/search?saved=true");
+                      } catch (error) {
+                        console.error("Local save failed:", error);
+                        router.push("/search?saved=true");
+                      }
+                    }}
+                    className="w-full h-[56px] bg-[#111111] text-white rounded-2xl text-[16px] font-bold hover:opacity-90 active:scale-[0.98] transition-all"
+                  >
+                    찜한 장소로 등록하기
+                  </button>
+                )
               )}
             </div>
 
             {/* [ADD] 리뷰 섹션 - 애니메이션 컨테이너 적용 (버튼 클릭 시 올라오는 효과) */}
             <div
-              className={`overflow-hidden transition-all duration-300 ease-out ${
-                showReviews
-                  ? "max-h-[1000px] opacity-100 mt-4"
-                  : "max-h-0 opacity-0 mt-0"
-              }`}
+              className={`overflow-hidden transition-all duration-300 ease-out ${showReviews
+                ? "max-h-[1000px] opacity-100 mt-4"
+                : "max-h-0 opacity-0 mt-0"
+                }`}
             >
               <div className="h-[1px] bg-[#f2f4f6] mb-4" />
               <section>
