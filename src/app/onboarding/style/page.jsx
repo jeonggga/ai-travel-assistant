@@ -34,14 +34,31 @@ const CATEGORIES = {
 
 export default function TravelStylePage() {
   const router = useRouter();
-  const { travelData, setTravelData } = useOnboardingStore();
+  const { travelData, setTravelData, saveTrip } = useOnboardingStore();
   const [styles, setStyles] = useState(travelData.styles || []);
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setTravelData({ styles });
     if (travelData.creationType === "manual") {
-      // 1~4번 단계 완료 시 상세 일정 뷰 페이지로 이동
-      router.push("/trips");
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          // 비로그인 상태면 로그인 페이지로
+          router.push("/login?from=result_save&showClose=true");
+          return;
+        }
+
+        const newTrip = await saveTrip();
+        if (newTrip && newTrip.id) {
+          router.push(`/trips/${newTrip.id}`);
+        } else {
+          alert("일정 데이터가 없거나 저장에 실패했습니다.");
+        }
+      } catch (err) {
+        console.error("[StylePage] saveTrip error:", err);
+        const errorMsg = err.response?.data?.detail || err.response?.data?.message || err.message || "알 수 없는 에러";
+        alert(`일정 생성에 실패했습니다: ${JSON.stringify(errorMsg)}`);
+      }
     } else {
       router.push("/onboarding/budget");
     }

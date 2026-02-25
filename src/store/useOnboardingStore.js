@@ -29,7 +29,9 @@ export const useOnboardingStore = create(
       setUser: (user) => set({ user }),
       saveTrip: async () => {
         const state = get();
-        if (!state.generatedTripData) return {};
+        if (state.travelData?.creationType === "ai" && !state.generatedTripData) {
+          return {};
+        }
 
         // Helper map for companion labels (Should match CompanionSelection options)
         const COMPANION_MAP = {
@@ -73,9 +75,13 @@ export const useOnboardingStore = create(
           return new Date().toISOString().split("T")[0];
         };
 
+        // 아이디가 문자열(String)인 경우 파싱 시도, 실패 시 임시값 1 부여
+        const parsedUserId = parseInt(user?.id, 10);
+        const safeUserId = isNaN(parsedUserId) ? 1 : parsedUserId;
+
         const payload = {
           // iPK: 0 (제외하거나 0으로 세팅)
-          iUserFK: user?.id || 1, // Store의 유저 정보
+          iUserFK: safeUserId, // Store의 유저 정보 (항상 정수형)
           dtDate1: formatDate(travelData.startDate),
           dtDate2: formatDate(travelData.endDate),
           strWhere: travelData.location || "제주도",

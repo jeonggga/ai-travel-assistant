@@ -53,14 +53,20 @@ function LoginContent() {
       // [ADD] 특정 경로(일정 저장 시도 중 로그인)에서 온 경우 처리 로직
       if (from === "result_save") {
         try {
-          await saveTrip(); // 저장되지 않았던 여행 일정 저장 (API 호출 포함)
+          const newTrip = await saveTrip(); // 저장되지 않았던 여행 일정 저장 (API 호출 포함)
           alert("로그인되었습니다. 여행 일정이 저장되었습니다.");
+          if (newTrip && newTrip.id) {
+            router.push(`/trips/${newTrip.id}`);
+          } else {
+            router.push("/home");
+          }
+          return; // [ADD] 불필요한 홈 이동 방지
         } catch (tripErr) {
           alert("로그인은 완료되었으나 일정 저장에 실패했습니다.");
         }
       }
 
-      // [ADD] 메인 홈 화면으로 이동
+      // [ADD] 일반 로그인이거나 저장 실패 후 메인 홈 화면으로 이동
       router.push("/home");
     } catch (err) {
       // [MOD] 서버 에러 메시지가 있으면 표시하고, 없으면 기본 메시지 표시

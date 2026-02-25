@@ -4,9 +4,11 @@ import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { clsx } from "clsx";
+import { useOnboardingStore } from "../../../store/useOnboardingStore";
 
 export default function ResultPage() {
   const router = useRouter();
+  const { saveTrip } = useOnboardingStore();
   const [selectedTab, setSelectedTab] = useState("일정");
   const [selectedDay, setSelectedDay] = useState(1);
   const [sheetHeight, setSheetHeight] = useState(478);
@@ -168,8 +170,24 @@ export default function ResultPage() {
     setSheetHeight(closest);
   };
 
-  const handleSaveSchedule = () => {
-    router.push("/login?from=result_save&showClose=true");
+  const handleSaveSchedule = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        // 비로그인 상태일 땐 로그인 페이지로 이동 후 자동 저장되게끔 fallback 유지
+        router.push("/login?from=result_save&showClose=true");
+        return;
+      }
+
+      // API 연동하여 생성 및 상세 페이지 이동
+      const newTrip = await saveTrip();
+      if (newTrip && newTrip.id) {
+        router.push(`/trips/${newTrip.id}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("일정 생성에 실패했습니다.");
+    }
   };
 
   const renderTabContent = () => {
@@ -271,7 +289,7 @@ export default function ResultPage() {
                             "object-cover",
                             photoIdx === 0 && "rounded-l-lg",
                             photoIdx === record.photos.length - 1 &&
-                              "rounded-r-lg",
+                            "rounded-r-lg",
                           )}
                         />
                         {photoIdx === 0 && photo.likes && (
