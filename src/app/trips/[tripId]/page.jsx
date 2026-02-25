@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
+import Script from "next/script";
 import { clsx } from "clsx";
 import { MobileContainer } from "../../../components/layout/MobileContainer";
 import { useOnboardingStore } from "../../../store/useOnboardingStore";
@@ -186,7 +187,9 @@ export default function TripDetailPage() {
               newDays[dayIdx].places.push({
                 name: locItem.location.strName,
                 time: timeStr,
-                duration: "1시간"
+                duration: "1시간",
+                latitude: parseFloat(locItem.location.ptLatitude || 0),
+                longitude: parseFloat(locItem.location.ptLongitude || 0)
               });
             });
           }
@@ -265,6 +268,7 @@ export default function TripDetailPage() {
 
   const [selectedTab, setSelectedTab] = useState("일정");
   const [selectedDay, setSelectedDay] = useState(1);
+  const [isSidePanelOpen, setIsSidePanelOpen] = useState(true);
   const [sheetHeight, setSheetHeight] = useState(478);
   const [isDragging, setIsDragging] = useState(false);
   const [startY, setStartY] = useState(0);
@@ -272,15 +276,9 @@ export default function TripDetailPage() {
   const [maxHeight, setMaxHeight] = useState(800);
   const [minHeight] = useState(100);
   const sheetRef = useRef(null);
-
-  // Define 3-tier snap heights
-  const SNAPS = {
-    LOW: 100,
-    MID: 550,
-    HIGH: 800,
-  };
-
-  const tabs = ["일정", "기록", "비용", "준비물", "동행자"];
+  const mapRef = useRef(null);
+  const mapInstance = useRef(null);
+  const markersRef = useRef([]);
 
   const currentDayPlaces = useMemo(
     () => trip?.days?.[selectedDay - 1]?.places || [],
@@ -291,6 +289,85 @@ export default function TripDetailPage() {
     () => trip?.days?.[selectedDay - 1]?.records || [],
     [trip, selectedDay],
   );
+
+  const initMap = () => {
+    if (!window.kakao || !mapRef.current) return;
+
+    window.kakao.maps.load(() => {
+      if (mapInstance.current) return;
+
+      const center = new window.kakao.maps.LatLng(37.5665, 126.978);
+      mapInstance.current = new window.kakao.maps.Map(mapRef.current, {
+        center,
+        level: 4,
+      });
+    });
+  };
+
+  useEffect(() => {
+    if (window.kakao && !mapInstance.current) {
+      initMap();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!mapInstance.current || !window.kakao) return;
+
+    const map = mapInstance.current;
+
+    // 기존 마커 제거
+    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current = [];
+
+    if (currentDayPlaces.length === 0) return;
+
+    const bounds = new window.kakao.maps.LatLngBounds();
+
+    currentDayPlaces.forEach((place, idx) => {
+      if (!place.latitude || !place.longitude) return;
+
+      const position = new window.kakao.maps.LatLng(place.latitude, place.longitude);
+
+      // 마커 생성
+      const marker = new window.kakao.maps.Marker({
+        position: position,
+        map: map
+      });
+
+      markersRef.current.push(marker);
+      bounds.extend(position);
+
+      // 숫자 라벨 표시 (CustomOverlay 활용)
+      const content = `
+        <div class="bg-[#7a28fa] text-white w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md text-[13px] font-bold mb-10">
+          ${idx + 1}
+        </div>
+      `;
+
+      const overlay = new window.kakao.maps.CustomOverlay({
+        position: position,
+        content: content,
+        yAnchor: 1.2
+      });
+
+      overlay.setMap(map);
+      markersRef.current.push(overlay);
+    });
+
+    // 모든 마커가 보이도록 지도 범위 조정
+    map.setBounds(bounds);
+  }, [currentDayPlaces]);
+
+  // Define 3-tier snap heights
+  const SNAPS = {
+    LOW: 100,
+    MID: 550,
+    HIGH: 800,
+  };
+
+  const tabs = ["일정", "기록", "비용", "준비물", "동행자"];
+
+
 
   const calculateDayCount = (tripData) => {
     const start = tripData?.dtDate1 || tripData?.startDate;
@@ -765,104 +842,135 @@ export default function TripDetailPage() {
     <MobileContainer showNav={true} className="lg:max-w-none">
       <div className="relative w-full h-screen bg-white overflow-hidden lg:flex lg:flex-row">
         {/* Left Side Panel - Desktop Only (Moved from Right, Added Search Panel Style) */}
-        <div className="hidden lg:flex flex-col w-[390px] h-full bg-white shadow-[4px_0_24px_rgba(0,0,0,0.08)] z-10 relative overflow-hidden shrink-0">
-
-          {/* Desktop Header for Left Panel */}
-          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#f2f4f6] shrink-0 lg:border-none lg:pb-6">
-            <div className="flex items-center gap-4">
-              <button onClick={() => router.push("/trips")}>
-                <Image
-                  src="/icons/arrow-left.svg"
-                  alt="back"
-                  width={20}
-                  height={16}
-                  className="w-5 h-4"
-                />
-              </button>
-              <h1 className="text-lg font-semibold text-[#111111] tracking-[-0.5px]">
-                {trip.title}
-              </h1>
-            </div>
-            {/* Optional: if Chatbot button makes sense here */}
-            {/* <button className="text-sm font-medium text-[#111111]">챗봇 대화</button> */}
-          </div>
-
-          <div className="flex flex-col h-full overflow-hidden">
-            {/* Desktop Tabs */}
-            <div className="border-b border-[#e5ebf2] px-5 flex-shrink-0">
-              <div className="flex items-center gap-4 lg:gap-6">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setSelectedTab(tab)}
-                    className={clsx(
-                      "text-[15px] font-semibold tracking-[-0.3px] py-4 transition-all relative lg:text-[16px]",
-                      selectedTab === tab ? "text-[#111111]" : "text-[#898989]",
-                    )}
-                  >
-                    {tab}
-                    {selectedTab === tab && (
-                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[2px] bg-[#111111]" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Desktop Day Tabs */}
-            {["일정", "기록"].includes(selectedTab) && (
-              <div className="px-5 pt-4 pb-2 flex gap-1 overflow-x-auto scrollbar-hide flex-shrink-0">
-                {days.map((day, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedDay(index + 1)}
-                    className={clsx(
-                      "whitespace-nowrap px-4 py-1.5 rounded-full text-[14px] font-medium transition-all border",
-                      selectedDay === index + 1
-                        ? "bg-[#111111] text-white border-[#111111] font-semibold"
-                        : "bg-white text-[#111111] border-[#DBDBDB] hover:bg-gray-50",
-                    )}
-                  >
-                    {day}
-                  </button>
-                ))}
-              </div>
+        <div
+          className={clsx(
+            "hidden lg:flex flex-col h-full bg-white shadow-[4px_0_24px_rgba(0,0,0,0.08)] z-10 relative transition-all duration-300 ease-in-out shrink-0",
+            isSidePanelOpen ? "w-[390px]" : "w-0 shadow-none",
+          )}
+        >
+          <div
+            className={clsx(
+              "flex flex-col h-full w-[390px] transition-opacity duration-200",
+              isSidePanelOpen ? "opacity-100" : "opacity-0 pointer-events-none",
             )}
+          >
+            {/* Desktop Header for Left Panel */}
+            <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#f2f4f6] shrink-0 lg:border-none lg:pb-6">
+              <div className="flex items-center gap-4">
+                <button onClick={() => router.push("/trips")}>
+                  <Image
+                    src="/icons/arrow-left.svg"
+                    alt="back"
+                    width={20}
+                    height={16}
+                    className="w-5 h-4"
+                  />
+                </button>
+                <h1 className="text-lg font-semibold text-[#111111] tracking-[-0.5px]">
+                  {trip.title}
+                </h1>
+              </div>
+              {/* Optional: if Chatbot button makes sense here */}
+              {/* <button className="text-sm font-medium text-[#111111]">챗봇 대화</button> */}
+            </div>
 
-            {/* Desktop Content Scroll Area */}
-            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-10 scrollbar-hide">
-              {renderTabContent()}
+            <div className="flex flex-col h-full overflow-hidden">
+              {/* Desktop Tabs */}
+              <div className="border-b border-[#e5ebf2] px-5 flex-shrink-0">
+                <div className="flex items-center gap-4 lg:gap-6">
+                  {tabs.map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setSelectedTab(tab)}
+                      className={clsx(
+                        "text-[15px] font-semibold tracking-[-0.3px] py-4 transition-all relative lg:text-[16px]",
+                        selectedTab === tab ? "text-[#111111]" : "text-[#898989]",
+                      )}
+                    >
+                      {tab}
+                      {selectedTab === tab && (
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[2px] bg-[#111111]" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop Day Tabs */}
+              {["일정", "기록"].includes(selectedTab) && (
+                <div className="px-5 pt-4 pb-2 flex gap-1 overflow-x-auto scrollbar-hide flex-shrink-0">
+                  {days.map((day, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedDay(index + 1)}
+                      className={clsx(
+                        "whitespace-nowrap px-4 py-1.5 rounded-full text-[14px] font-medium transition-all border",
+                        selectedDay === index + 1
+                          ? "bg-[#111111] text-white border-[#111111] font-semibold"
+                          : "bg-white text-[#111111] border-[#DBDBDB] hover:bg-gray-50",
+                      )}
+                    >
+                      {day}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Desktop Content Scroll Area */}
+              <div className="flex-1 overflow-y-auto px-5 pt-4 pb-10 scrollbar-hide">
+                {renderTabContent()}
+              </div>
             </div>
           </div>
+
+          {/* Toggle Button */}
+          <button
+            onClick={() => {
+              setIsSidePanelOpen(!isSidePanelOpen);
+              setTimeout(() => {
+                if (mapInstance.current) {
+                  mapInstance.current.relayout();
+                  // Re-center if needed or adjust bounds
+                  if (currentDayPlaces.length > 0) {
+                    const bounds = new window.kakao.maps.LatLngBounds();
+                    currentDayPlaces.forEach((place) => {
+                      if (place.latitude && place.longitude) {
+                        bounds.extend(new window.kakao.maps.LatLng(place.latitude, place.longitude));
+                      }
+                    });
+                    mapInstance.current.setBounds(bounds);
+                  }
+                }
+              }, 300);
+            }}
+            className={clsx(
+              "absolute top-1/2 -translate-y-1/2 -right-4 w-8 h-12 bg-white border border-[#f2f4f6] rounded-xl shadow-md z-30 flex items-center justify-center hover:bg-gray-50 transition-all",
+              !isSidePanelOpen && "!-right-10 rounded-xl",
+            )}
+          >
+            <Image
+              src="/icons/arrow-left.svg"
+              alt="toggle"
+              width={16}
+              height={16}
+              className={clsx(
+                "transition-transform duration-300",
+                !isSidePanelOpen && "rotate-180",
+              )}
+            />
+          </button>
         </div>
 
         {/* Map Section */}
         <div className="relative flex-1 h-full overflow-hidden">
+          <Script
+            src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=57dd33d25e0269c9c37a3ea70b3a3b4f&autoload=false&libraries=services"
+            strategy="afterInteractive"
+            onLoad={initMap}
+          />
           {/* Map Background */}
           <div className="absolute inset-0 w-full h-full">
-            <Image
-              src="/images/map-background.png"
-              alt="map"
-              fill
-              className="object-cover"
-              priority
-            />
-
-            {/* Map Markers Simulation */}
-            {currentDayPlaces.map((place, idx) => (
-              <div
-                key={idx}
-                className="absolute"
-                style={{
-                  top: `${166 + idx * 50}px`,
-                  left: `${148 + idx * 20}px`,
-                }}
-              >
-                <div className="w-8 h-8 rounded-full bg-[#7a28fa] text-white text-[15px] font-semibold flex items-center justify-center border-2 border-white shadow-lg">
-                  {idx + 1}
-                </div>
-              </div>
-            ))}
+            <div ref={mapRef} className="w-full h-full" />
           </div>
 
           {/* Header - Mobile Only (Hidden on Desktop since it's moved to Left Panel) */}
