@@ -40,7 +40,10 @@ export const SideNavigation = () => {
     <div className="hidden lg:flex flex-col w-[100px] h-screen bg-white border-r border-[#f2f4f6] sticky top-0 left-0 py-8 px-2 z-50">
       <nav className="flex flex-col gap-6">
         {NAV_ITEMS.map((item) => {
-          const isActive = pathname === item.path;
+          const isActive =
+            item.path === "/home"
+              ? pathname === "/home"
+              : pathname.startsWith(item.path);
           const Icon = item.icon;
 
           return (

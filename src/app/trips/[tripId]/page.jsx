@@ -156,7 +156,7 @@ export default function TripDetailPage() {
     HIGH: 800,
   };
 
-  const tabs = ["일정", "기록", "예산", "준비물", "동행자"];
+  const tabs = ["일정", "기록", "비용", "준비물", "동행자"];
 
   const currentDayPlaces = useMemo(
     () => trip?.days?.[selectedDay - 1]?.places || [],
@@ -168,8 +168,45 @@ export default function TripDetailPage() {
     [trip, selectedDay],
   );
 
-  const dayCount = trip?.days?.length || 1;
+  const calculateDayCount = (tripData) => {
+    const start = tripData?.dtDate1 || tripData?.startDate;
+    const end = tripData?.dtDate2 || tripData?.endDate;
+
+    if (start && end) {
+      const startDate = new Date(start);
+      const endDate = new Date(end);
+
+      // Calculate difference in time (resetting hours to avoid timezone issues)
+      const startUtc = Date.UTC(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+      const endUtc = Date.UTC(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+
+      const differenceInDays = Math.floor((endUtc - startUtc) / (1000 * 3600 * 24)) + 1;
+
+      if (differenceInDays > 0 && !isNaN(differenceInDays)) {
+        return differenceInDays;
+      }
+    }
+
+    return tripData?.days?.length || 1; // Fallback
+  };
+
+  const dayCount = calculateDayCount(trip);
   const days = Array.from({ length: dayCount }, (_, i) => `${i + 1}일차`);
+
+  const getActualDateText = (dayIndex) => {
+    const start = trip?.dtDate1 || trip?.startDate;
+    if (!start) return `${dayIndex}일차`;
+    try {
+      const date = new Date(start);
+      date.setDate(date.getDate() + (dayIndex - 1));
+      if (isNaN(date.getTime())) return `${dayIndex}일차`;
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      return `${month}월 ${day}일`;
+    } catch (e) {
+      return `${dayIndex}일차`;
+    }
+  };
 
   useEffect(() => {
     const h = window.innerHeight;
@@ -257,8 +294,15 @@ export default function TripDetailPage() {
                 </div>
               ))
             ) : (
-              <div className="text-center py-10 text-[#8e8e93]">
-                일정이 없습니다.
+              <div className="flex flex-col items-center justify-center py-6 px-6 bg-white mt-4">
+                <p className="text-[16px] font-semibold text-[#111111] mb-2">{getActualDateText(selectedDay)}</p>
+                <p className="text-[14px] text-[#8e8e93] text-center mb-6 whitespace-pre-wrap">
+                  {"방문할 장소를 추가해 일정을 채워보세요"}
+                </p>
+                <div className="flex gap-2">
+                  <button className="px-5 py-2.5 bg-white border border-[#d1d5db] text-[#111111] text-[14px] font-semibold rounded-md hover:bg-gray-50 transition-colors">장소 추가</button>
+                  <button className="px-5 py-2.5 bg-white border border-[#d1d5db] text-[#111111] text-[14px] font-semibold rounded-md hover:bg-gray-50 transition-colors">찜한 장소로 추가</button>
+                </div>
               </div>
             )}
           </div>
@@ -266,14 +310,16 @@ export default function TripDetailPage() {
 
         {selectedTab === "기록" && (
           <div className="flex flex-col gap-5">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-[#111111]">
-                108개의 사진
-              </span>
-              <span className="text-sm font-semibold text-[#7a28fa] cursor-pointer">
-                사진 등록
-              </span>
-            </div>
+            {currentDayRecords.length > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-[#111111]">
+                  108개의 사진
+                </span>
+                <span className="text-sm font-semibold text-[#7a28fa] cursor-pointer">
+                  사진 등록
+                </span>
+              </div>
+            )}
 
             {currentDayRecords.length > 0 ? (
               currentDayRecords.map((record, idx) => (
@@ -314,7 +360,7 @@ export default function TripDetailPage() {
                             "object-cover",
                             photoIdx === 0 && "rounded-l-lg",
                             photoIdx === record.photos.length - 1 &&
-                              "rounded-r-lg",
+                            "rounded-r-lg",
                           )}
                         />
                         {photoIdx === 0 && photo.likes && (
@@ -344,201 +390,232 @@ export default function TripDetailPage() {
                 </div>
               ))
             ) : (
-              <div className="text-center py-10 text-[#8e8e93]">
-                기록이 없습니다.
+              <div className="flex flex-col items-center justify-center py-6 px-6 bg-white mt-4">
+                <p className="text-[16px] font-semibold text-[#111111] mb-2">{getActualDateText(selectedDay)}</p>
+                <p className="text-[14px] text-[#8e8e93] text-center mb-6 whitespace-pre-wrap">
+                  {"사진으로 여행 이야기를 채워보세요"}
+                </p>
+                <button className="px-5 py-2.5 bg-white border border-[#d1d5db] text-[#111111] text-[14px] font-semibold rounded-md hover:bg-gray-50 transition-colors">사진 추가</button>
               </div>
             )}
           </div>
         )}
 
-        {selectedTab === "예산" && trip.budget && (
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center justify-between gap-5">
-              <div className="flex items-center gap-1">
-                <span className="text-sm font-semibold text-[#111111]">
-                  예산 {trip.budget.total.toLocaleString()}원
-                </span>
-                <Image
-                  src="/icons/edit-purple.svg"
-                  alt="edit"
-                  width={15}
-                  height={15}
-                />
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  className="text-sm font-semibold text-[#7a28fa] bg-transparent border-none p-0 cursor-pointer"
-                  onClick={() => router.push(`/trips/${tripId}/camera/receipt`)}
-                >
-                  영수증 등록
-                </button>
-                <span className="text-sm font-semibold text-[#8e8e93]">
-                  내역
-                </span>
-              </div>
-            </div>
-
-            <div className="h-[1px] bg-[#f2f4f6]" />
-
-            <div className="flex flex-col gap-4">
-              <h3 className="text-base font-semibold text-[#111111] tracking-[-0.5px]">
-                사용 금액
-              </h3>
-              <div className="flex gap-6 items-center">
-                <div className="relative w-[159px] h-[159px] flex-shrink-0">
+        {selectedTab === "비용" && (
+          trip.budget && Object.keys(trip.budget).length > 0 ? (
+            <div className="flex flex-col gap-6">
+              <div className="flex items-center justify-between gap-5">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-semibold text-[#111111]">
+                    비용 {trip.budget.total.toLocaleString()}원
+                  </span>
                   <Image
-                    src="/icons/donut-chart.svg"
-                    alt="chart"
-                    width={159}
-                    height={159}
+                    src="/icons/edit-purple.svg"
+                    alt="edit"
+                    width={15}
+                    height={15}
                   />
-                  <span className="absolute top-[66px] right-[10px] text-[13px] font-semibold text-white">
-                    62%
-                  </span>
-                  <span className="absolute top-[93px] left-[11px] text-[13px] font-semibold text-white">
-                    25%
-                  </span>
-                  <span className="absolute top-[34px] left-[12px] text-[13px] font-semibold text-white">
-                    12%
-                  </span>
-                  <span className="absolute top-[13px] left-[47px] text-[13px] font-semibold text-white">
-                    6%
-                  </span>
                 </div>
-
-                <div className="flex-1 flex flex-col gap-2">
-                  <div className="flex items-center justify-between gap-4 mb-1">
-                    <span className="text-xs text-[#abb1b9]">카테고리</span>
-                    <span className="text-xs text-[#abb1b9]">사용 금액</span>
-                  </div>
-                  <div className="h-[1px] bg-[#f2f4f6]" />
-                  {trip.budget.spent.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between gap-4"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full"
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-sm text-[#556574]">
-                          {item.category}
-                        </span>
-                      </div>
-                      <span
-                        className={clsx(
-                          "text-sm font-semibold",
-                          item.category === "식비"
-                            ? "text-[#ff0909]"
-                            : "text-[#111111]",
-                        )}
-                      >
-                        {item.amount.toLocaleString()}
-                      </span>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-3">
+                  <button
+                    className="text-sm font-semibold text-[#7a28fa] bg-transparent border-none p-0 cursor-pointer"
+                    onClick={() => router.push(`/trips/${tripId}/camera/receipt`)}
+                  >
+                    영수증 등록
+                  </button>
+                  <span className="text-sm font-semibold text-[#8e8e93]">
+                    내역
+                  </span>
                 </div>
               </div>
 
-              <div className="flex items-center justify-center gap-1.5 bg-[#fff1f1] rounded-lg py-3">
-                <Image
-                  src="/icons/danger.svg"
-                  alt="warning"
-                  width={15}
-                  height={14}
-                />
-                <span className="text-[13px] font-medium text-[#ff0909]">
-                  예산을 넘은 사용 금액이 있어요
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
+              <div className="h-[1px] bg-[#f2f4f6]" />
 
-        {selectedTab === "준비물" && trip.checklist && (
-          <div className="flex flex-col gap-4 pt-1">
-            <div className="flex items-center justify-between gap-5">
-              <span className="text-sm font-semibold text-[#111111]">
-                준비물 {trip.checklist.length}개
-              </span>
-              <span className="text-sm font-semibold text-[#7a28fa] cursor-pointer">
-                준비물 추가
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-3 bg-[#f9fafb] rounded-xl p-4">
-              {trip.checklist.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between gap-2"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-[18px] h-[18px] rounded cursor-pointer">
-                      <Image
-                        src="/icons/checkbox-unchecked.svg"
-                        alt="checkbox"
-                        width={18}
-                        height={18}
-                      />
-                    </div>
-                    <span className="text-base text-[#111111] tracking-[-0.4px]">
-                      {item.name}
+              <div className="flex flex-col gap-4">
+                <h3 className="text-base font-semibold text-[#111111] tracking-[-0.5px]">
+                  사용 금액
+                </h3>
+                <div className="flex gap-6 items-center">
+                  <div className="relative w-[159px] h-[159px] flex-shrink-0">
+                    <Image
+                      src="/icons/donut-chart.svg"
+                      alt="chart"
+                      width={159}
+                      height={159}
+                    />
+                    <span className="absolute top-[66px] right-[10px] text-[13px] font-semibold text-white">
+                      62%
+                    </span>
+                    <span className="absolute top-[93px] left-[11px] text-[13px] font-semibold text-white">
+                      25%
+                    </span>
+                    <span className="absolute top-[34px] left-[12px] text-[13px] font-semibold text-white">
+                      12%
+                    </span>
+                    <span className="absolute top-[13px] left-[47px] text-[13px] font-semibold text-white">
+                      6%
                     </span>
                   </div>
-                  <Image
-                    src="/icons/dots-menu.svg"
-                    alt="menu"
-                    width={18}
-                    height={4}
-                  />
+
+                  <div className="flex-1 flex flex-col gap-2">
+                    <div className="flex items-center justify-between gap-4 mb-1">
+                      <span className="text-xs text-[#abb1b9]">카테고리</span>
+                      <span className="text-xs text-[#abb1b9]">사용 금액</span>
+                    </div>
+                    <div className="h-[1px] bg-[#f2f4f6]" />
+                    {trip.budget.spent.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between gap-4"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-2.5 h-2.5 rounded-full"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          <span className="text-sm text-[#556574]">
+                            {item.category}
+                          </span>
+                        </div>
+                        <span
+                          className={clsx(
+                            "text-sm font-semibold",
+                            item.category === "식비"
+                              ? "text-[#ff0909]"
+                              : "text-[#111111]",
+                          )}
+                        >
+                          {item.amount.toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
+
+                <div className="flex items-center justify-center gap-1.5 bg-[#fff1f1] rounded-lg py-3">
+                  <Image
+                    src="/icons/danger.svg"
+                    alt="warning"
+                    width={15}
+                    height={14}
+                  />
+                  <span className="text-[13px] font-medium text-[#ff0909]">
+                    예상 비용을 초과한 사용 금액이 있어요
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-6 px-6 bg-white mt-4">
+              <p className="text-[14px] text-[#8e8e93] text-center mb-6 whitespace-pre-wrap">
+                {"비용을 설정하고\n사용 내역을 기록해 보세요"}
+              </p>
+              <button className="px-5 py-2.5 bg-white border border-[#d1d5db] text-[#111111] text-[14px] font-semibold rounded-md hover:bg-gray-50 transition-colors">비용 설정</button>
+            </div>
+          )
         )}
 
-        {selectedTab === "동행자" && trip.companions && (
-          <div className="flex flex-col gap-4 pt-1">
-            <div className="flex items-center justify-between gap-5">
-              <span className="text-sm font-semibold text-[#111111]">
-                등록된 동행자 {trip.companions.length}명
-              </span>
-              <span className="text-sm font-semibold text-[#7a28fa] cursor-pointer">
-                동행자 초대
-              </span>
-            </div>
+        {selectedTab === "준비물" && (
+          trip.checklist && trip.checklist.length > 0 ? (
+            <div className="flex flex-col gap-4 pt-1">
+              <div className="flex items-center justify-between gap-5">
+                <span className="text-sm font-semibold text-[#111111]">
+                  준비물 {trip.checklist.length}개
+                </span>
+                <span className="text-sm font-semibold text-[#7a28fa] cursor-pointer">
+                  준비물 추가
+                </span>
+              </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              {trip.companions.map((companion) => (
-                <div
-                  key={companion.id}
-                  className="flex items-center gap-3 bg-white rounded-lg border border-[#f2f4f6] px-4 py-3"
-                >
-                  <div className="w-5 h-5 flex-shrink-0">
+              <div className="flex flex-col gap-3 bg-[#f9fafb] rounded-xl p-4">
+                {trip.checklist.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-2"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-[18px] h-[18px] rounded cursor-pointer">
+                        <Image
+                          src="/icons/checkbox-unchecked.svg"
+                          alt="checkbox"
+                          width={18}
+                          height={18}
+                        />
+                      </div>
+                      <span className="text-base text-[#111111] tracking-[-0.4px]">
+                        {item.name}
+                      </span>
+                    </div>
                     <Image
-                      src="/icons/profile.svg"
-                      alt="profile"
-                      width={20}
-                      height={20}
+                      src="/icons/dots-menu.svg"
+                      alt="menu"
+                      width={18}
+                      height={4}
                     />
                   </div>
-                  <span className="text-sm text-[#111111] font-medium truncate">
-                    {companion.name}
-                  </span>
-                  {companion.isOwner && (
-                    <Image
-                      src="/icons/crown.svg"
-                      alt="owner"
-                      width={14}
-                      height={10}
-                      className="ml-auto flex-shrink-0"
-                    />
-                  )}
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-6 px-6 bg-white mt-4">
+              <p className="text-[14px] text-[#8e8e93] text-center mb-6 whitespace-pre-wrap">
+                {"아직 준비물이 없어요\n여행 전에 필요한 물품을 추가해 보세요"}
+              </p>
+              <button className="px-5 py-2.5 bg-white border border-[#d1d5db] text-[#111111] text-[14px] font-semibold rounded-md hover:bg-gray-50 transition-colors">준비물 추가</button>
+            </div>
+          )
+        )}
+
+        {selectedTab === "동행자" && (
+          trip.companions && trip.companions.length > 0 ? (
+            <div className="flex flex-col gap-4 pt-1">
+              <div className="flex items-center justify-between gap-5">
+                <span className="text-sm font-semibold text-[#111111]">
+                  등록된 동행자 {trip.companions.length}명
+                </span>
+                <span className="text-sm font-semibold text-[#7a28fa] cursor-pointer">
+                  동행자 초대
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                {trip.companions.map((companion) => (
+                  <div
+                    key={companion.id}
+                    className="flex items-center gap-3 bg-white rounded-lg border border-[#f2f4f6] px-4 py-3"
+                  >
+                    <div className="w-5 h-5 flex-shrink-0">
+                      <Image
+                        src="/icons/profile.svg"
+                        alt="profile"
+                        width={20}
+                        height={20}
+                      />
+                    </div>
+                    <span className="text-sm text-[#111111] font-medium truncate">
+                      {companion.name}
+                    </span>
+                    {companion.isOwner && (
+                      <Image
+                        src="/icons/crown.svg"
+                        alt="owner"
+                        width={14}
+                        height={10}
+                        className="ml-auto flex-shrink-0"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-6 px-6 bg-white mt-4">
+              <p className="text-[14px] text-[#8e8e93] text-center mb-6 whitespace-pre-wrap">
+                {"아직 등록된 동행자가 없어요\n함께 여행할 사람을 추가해 보세요"}
+              </p>
+              <button className="px-5 py-2.5 bg-white border border-[#d1d5db] text-[#111111] text-[14px] font-semibold rounded-md hover:bg-gray-50 transition-colors">동행자 초대</button>
+            </div>
+          )
         )}
       </>
     );
@@ -561,8 +638,80 @@ export default function TripDetailPage() {
   }
 
   return (
-    <MobileContainer className="lg:max-w-none">
+    <MobileContainer showNav={true} className="lg:max-w-none">
       <div className="relative w-full h-screen bg-white overflow-hidden lg:flex lg:flex-row">
+        {/* Left Side Panel - Desktop Only (Moved from Right, Added Search Panel Style) */}
+        <div className="hidden lg:flex flex-col w-[390px] h-full bg-white shadow-[4px_0_24px_rgba(0,0,0,0.08)] z-10 relative overflow-hidden shrink-0">
+
+          {/* Desktop Header for Left Panel */}
+          <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#f2f4f6] shrink-0 lg:border-none lg:pb-6">
+            <div className="flex items-center gap-4">
+              <button onClick={() => router.push("/trips")}>
+                <Image
+                  src="/icons/arrow-left.svg"
+                  alt="back"
+                  width={20}
+                  height={16}
+                  className="w-5 h-4"
+                />
+              </button>
+              <h1 className="text-lg font-semibold text-[#111111] tracking-[-0.5px]">
+                {trip.title}
+              </h1>
+            </div>
+            {/* Optional: if Chatbot button makes sense here */}
+            {/* <button className="text-sm font-medium text-[#111111]">챗봇 대화</button> */}
+          </div>
+
+          <div className="flex flex-col h-full overflow-hidden">
+            {/* Desktop Tabs */}
+            <div className="border-b border-[#e5ebf2] px-5 flex-shrink-0">
+              <div className="flex items-center gap-4 lg:gap-6">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setSelectedTab(tab)}
+                    className={clsx(
+                      "text-[15px] font-semibold tracking-[-0.3px] py-4 transition-all relative lg:text-[16px]",
+                      selectedTab === tab ? "text-[#111111]" : "text-[#898989]",
+                    )}
+                  >
+                    {tab}
+                    {selectedTab === tab && (
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[2px] bg-[#111111]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop Day Tabs */}
+            {["일정", "기록"].includes(selectedTab) && (
+              <div className="px-5 pt-4 pb-2 flex gap-1 overflow-x-auto scrollbar-hide flex-shrink-0">
+                {days.map((day, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedDay(index + 1)}
+                    className={clsx(
+                      "whitespace-nowrap px-4 py-1.5 rounded-full text-[14px] font-medium transition-all border",
+                      selectedDay === index + 1
+                        ? "bg-[#111111] text-white border-[#111111] font-semibold"
+                        : "bg-white text-[#111111] border-[#DBDBDB] hover:bg-gray-50",
+                    )}
+                  >
+                    {day}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Desktop Content Scroll Area */}
+            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-10 scrollbar-hide">
+              {renderTabContent()}
+            </div>
+          </div>
+        </div>
+
         {/* Map Section */}
         <div className="relative flex-1 h-full overflow-hidden">
           {/* Map Background */}
@@ -592,10 +741,10 @@ export default function TripDetailPage() {
             ))}
           </div>
 
-          {/* Header - Adjusted for Responsive */}
-          <div className="fixed top-0 left-0 right-0 px-6 pt-4 pb-4 flex items-center justify-between bg-white z-20 shadow-sm max-w-[430px] lg:max-w-none lg:static lg:border-b lg:border-[#f2f4f6] mx-auto lg:mx-0">
+          {/* Header - Mobile Only (Hidden on Desktop since it's moved to Left Panel) */}
+          <div className="lg:hidden fixed top-0 left-0 right-0 px-6 pt-4 pb-4 flex items-center justify-between bg-white z-20 shadow-sm max-w-[430px] mx-auto">
             <div className="flex items-center gap-4">
-              <button onClick={() => router.back()}>
+              <button onClick={() => router.push("/trips")}>
                 <Image
                   src="/icons/arrow-left.svg"
                   alt="back"
@@ -611,56 +760,6 @@ export default function TripDetailPage() {
             <button className="text-sm font-medium text-[#111111]">
               챗봇 대화
             </button>
-          </div>
-        </div>
-
-        {/* Right Side Panel - Desktop Only */}
-        <div className="hidden lg:flex flex-col w-[420px] h-full bg-white border-l border-[#f2f4f6] shadow-[-4px_0_12px_rgba(0,0,0,0.02)] z-10 overflow-hidden">
-          <div className="flex flex-col h-full">
-            {/* Desktop Tabs */}
-            <div className="border-b border-[#e5ebf2] px-5 flex-shrink-0">
-              <div className="flex items-center gap-4">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setSelectedTab(tab)}
-                    className={clsx(
-                      "text-[15px] font-semibold tracking-[-0.3px] py-4 transition-all relative",
-                      selectedTab === tab ? "text-[#111111]" : "text-[#898989]",
-                    )}
-                  >
-                    {tab}
-                    {selectedTab === tab && (
-                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full h-[2px] bg-[#111111]" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Desktop Day Tabs */}
-            <div className="px-5 pt-4 pb-2 flex gap-1 overflow-x-auto scrollbar-hide flex-shrink-0">
-              {days.map((day, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedDay(index + 1)}
-                  className={clsx(
-                    "px-4 py-2 rounded-full text-[14px] font-semibold whitespace-nowrap transition-colors",
-                    selectedDay === index + 1
-                      ? "bg-[#111111] text-white"
-                      : "bg-[#f5f7f9] text-[#556574] font-medium",
-                  )}
-                >
-                  {day}
-                </button>
-              ))}
-            </div>
-
-            {/* Desktop Content Scroll Area */}
-            <div className="flex-1 overflow-y-auto px-5 pt-4 pb-10 scrollbar-hide">
-              {/* Content rendering logic reused or extracted. For now, duplication or inline. Let's keep it clean. */}
-              {renderTabContent()}
-            </div>
           </div>
         </div>
 
@@ -706,23 +805,25 @@ export default function TripDetailPage() {
             </div>
           )}
 
-          {/* Mobile Day Tabs - Always visible */}
-          <div className="px-5 pt-4 pb-3 flex gap-1 overflow-x-auto scrollbar-hide">
-            {days.map((day, index) => (
-              <button
-                key={index}
-                onClick={() => setSelectedDay(index + 1)}
-                className={clsx(
-                  "px-4 py-2 rounded-full text-[15px] font-semibold whitespace-nowrap transition-colors",
-                  selectedDay === index + 1
-                    ? "bg-[#111111] text-white"
-                    : "bg-transparent text-black font-normal",
-                )}
-              >
-                {day}
-              </button>
-            ))}
-          </div>
+          {/* Mobile Day Tabs - Visible only on specific tabs */}
+          {["일정", "기록"].includes(selectedTab) && (
+            <div className="px-5 pt-4 pb-3 flex gap-1 overflow-x-auto scrollbar-hide">
+              {days.map((day, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedDay(index + 1)}
+                  className={clsx(
+                    "whitespace-nowrap px-4 py-1.5 rounded-full text-[14px] font-medium transition-all border",
+                    selectedDay === index + 1
+                      ? "bg-[#111111] text-white border-[#111111] font-semibold"
+                      : "bg-white text-[#111111] border-[#DBDBDB] hover:bg-gray-50",
+                  )}
+                >
+                  {day}
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Mobile Content visible only when not collapsed */}
           {!isCollapsed && (
