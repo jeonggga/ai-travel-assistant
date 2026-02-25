@@ -11,7 +11,7 @@ import { useOnboardingStore } from "../../store/useOnboardingStore";
 
 export default function HomePage() {
   const router = useRouter();
-  const { setTravelData } = useOnboardingStore();
+  const { setTravelData, resetTravelData } = useOnboardingStore();
   const [activeTab, setActiveTab] = useState("전체");
   const [isActionSheetOpen, setIsActionSheetOpen] = useState(false);
 
@@ -72,6 +72,7 @@ export default function HomePage() {
             <button
               className="bg-[#7a28fa] text-white px-5 py-2.5 lg:px-6 lg:py-3 rounded-full text-[14px] lg:text-[16px] font-semibold hover:scale-[1.02] active:scale-[0.98] transition-all"
               onClick={() => {
+                resetTravelData(); // [ADD] 기존 입력 데이터 초기화
                 setTravelData({ creationType: "ai" });
                 router.push("/onboarding/location");
               }}
@@ -347,6 +348,7 @@ export default function HomePage() {
           {
             label: "AI 일정 생성",
             onClick: () => {
+              resetTravelData(); // [ADD] 기존 입력 데이터 초기화
               setTravelData({ creationType: "ai" });
               router.push("/onboarding/location");
             },
@@ -354,6 +356,7 @@ export default function HomePage() {
           {
             label: "직접 일정 생성",
             onClick: () => {
+              resetTravelData(); // [ADD] 기존 입력 데이터 초기화
               setTravelData({ creationType: "manual" });
               router.push("/onboarding/location");
             },
